@@ -10,13 +10,11 @@ use Illuminate\Support\Collection;
  * @version $Id$
  * @access public
  */
- 
 class DomainChecker
 {
     protected $domain;
     protected $rawDns = [];
     protected $dnsRecords = null;
-
     /**
      * DomainChecker::make()
      * 
@@ -27,7 +25,6 @@ class DomainChecker
     {
         return new static($domain);
     }
-    
     /**
      * DomainChecker::__construct()
      * 
@@ -36,10 +33,9 @@ class DomainChecker
      */
     public function __construct($domain)
     {
-        $this->domain     = $domain;
+        $this->domain = $domain;
         $this->loadDns();
     }
-
     /**
      * DomainChecker::domain()
      * 
@@ -49,28 +45,28 @@ class DomainChecker
     {
         return $this->domain;
     }
-    
     /**
      * DomainChecker::hasDmarc()
      * 
      * @return
      */
-    public function hasDmarc(){
+    public function hasDmarc()
+    {
         return $this->dnsRecords->has('dmarc');
     }
-    
     /**
      * DomainChecker::getEntry()
      * 
      * @param mixed $entry
      * @return
      */
-    public function getEntry($entry=null){
-        if(!$this->dnsRecords->has($entry))
+    public function getEntry($entry = null)
+    {
+        if (!$this->dnsRecords->has($entry))
             return false;
-        return ($this->dnsRecords->get($entry)->count() > 1) ? $this->dnsRecords->get($entry)->all() : $this->dnsRecords->get($entry)->first();
+        return ($this->dnsRecords->get($entry)->count() > 1) ? $this->dnsRecords->get($entry)->
+            all() : $this->dnsRecords->get($entry)->first();
     }
-    
     /**
      * DomainChecker::loadDns()
      * 
@@ -83,38 +79,44 @@ class DomainChecker
      *      (DNS_ALL is better than DNS_ANY, according to php.net)
      *
      */
-    public function loadDns($type=DNS_ANY)
+    public function loadDns($type = DNS_ANY)
     {
         $nsRecords = dns_get_record($this->domain, $type);
-        $dmarc     = dns_get_record('_dmarc.'.$this->domain,$type);
-        if($dmarc){
-            foreach($dmarc as $a=>$entry){
+        $dmarc = dns_get_record('_dmarc.' . $this->domain, $type);
+        if ($dmarc)
+        {
+            foreach ($dmarc as $a => $entry)
+            {
                 $entry['type'] = 'dmarc';
                 $dmarcEntries[$a] = $entry;
             }
         }
-        $this->dnsRecords = Collection::make($this->sort(array_merge($nsRecords,$dmarcEntries)));
+        $this->dnsRecords = Collection::make($this->sort(array_merge($nsRecords, $dmarcEntries)));
     }
-
     /**
      * DomainChecker::sort()
      * 
      * @param mixed $nsRecords
      * @return
      */
-    public function sort($nsRecords=[])
+    public function sort($nsRecords = [])
     {
-        if (is_array($nsRecords)) {
+        if (is_array($nsRecords))
+        {
             $this->rawDns = $nsRecords;
-            foreach ($nsRecords as $dns_record) {
+            foreach ($nsRecords as $dns_record)
+            {
                 $current_type = strtolower($dns_record['type']);
-                if (!isset($dns_sorted[$current_type])){
+                if (!isset($dns_sorted[$current_type]))
+                {
                     $dns_sorted[$current_type] = [];
                 }
                 $dns_sorted[$current_type][] = $dns_record;
             }
-            if($dns_sorted){
-                foreach($dns_sorted as $a=>$b){
+            if ($dns_sorted)
+            {
+                foreach ($dns_sorted as $a => $b)
+                {
                     $return[$a] = Collection::make($b);
                 }
             }
@@ -122,7 +124,6 @@ class DomainChecker
         }
         return false;
     }
-
     /**
      * DomainChecker::raw()
      * 
@@ -132,7 +133,6 @@ class DomainChecker
     {
         return $this->rawDns;
     }
-
     /**
      * DomainChecker::nameservers()
      * 
