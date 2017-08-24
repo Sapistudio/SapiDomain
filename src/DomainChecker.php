@@ -3,50 +3,90 @@ namespace SapiStudio\DnsRecords;
 use Illuminate\Support\Collection;
 
 /**
- * DomainChecker
+ * DnsQuerifier
  * 
  * @package 
  * @copyright 2017
  * @version $Id$
  * @access public
  */
-class DomainChecker
+class DnsQuerifier
 {
-    protected $domain;
-    protected $rawDns = [];
-    protected $dnsRecords = null;
+    const  TYPE_A   = DNS_A;
+    const  TYPE_TXT = DNS_TXT;
+    const  TYPE_ANY = DNS_ANY;
+    
+    protected $hostname;
+    protected $rawDnsRecords    = [];
+    protected $dnsRecords       = null;
+    protected $hostnameIsUp     = true;/** default , we assume that domain is up,*/
+    
     /**
-     * DomainChecker::make()
+     * DnsQuerifier::hostLookup()
+     * 
+     * @param mixed $host
+     * @return
+     */
+    public static function hostLookup($host = null)
+    {
+        return new static($host);
+    }
+    
+    /**
+     * DnsQuerifier::domainLookup()
      * 
      * @param mixed $domain
      * @return
      */
-    public static function make($domain = null)
+    public static function blacklistLookup($ip = null,$rbls = [])
     {
-        return new static($domain);
+        if(!$ip || !$rbls)
+            return false;
+        $reverseIp = self::reverseIp($ip);
+        $ipBlacklisted = false;
+        foreach($rbls as $key=>$rblUrl){
+            $blacklisted = (new static($reverseIp.'.'.$rblUrl))->testRbls();
+            if($blacklisted)
+                $ipBlacklisted = true;
+            $results[$rblUrl] = $blacklisted;
+        }
+        return ['blacklisted'=>$ipBlacklisted,'results'=>$results];
     }
+    
     /**
-     * DomainChecker::__construct()
+     * DnsQuerifier::reverseIp()
      * 
-     * @param mixed $domain
+     * @param mixed $ip
+     * @return
+     */
+    public static function reverseIp($ip)
+    {
+        list($part1, $part2, $part3, $part4) = explode('.', $ip);
+        return sprintf('%s.%s.%s.%s', $part4, $part3, $part2, $part1);
+    }
+    
+    /**
+     * DnsQuerifier::__construct()
+     * 
+     * @param mixed $hostName
      * @return void
      */
-    public function __construct($domain)
+    public function __construct($hostName)
     {
-        $this->domain = $domain;
-        $this->loadDns();
+        $this->hostname = $hostName;
+        $this->loadDnsRecords();
     }
     /**
-     * DomainChecker::domain()
+     * DnsQuerifier::domain()
      * 
      * @return
      */
-    public function domain()
+    public function getHost()
     {
-        return $this->domain;
+        return $this->hostname;
     }
     /**
-     * DomainChecker::hasDmarc()
+     * DnsQuerifier::hasDmarc()
      * 
      * @return
      */
@@ -55,7 +95,7 @@ class DomainChecker
         return $this->dnsRecords->has('dmarc');
     }
     /**
-     * DomainChecker::getEntry()
+     * DnsQuerifier::getEntry()
      * 
      * @param mixed $entry
      * @return
@@ -66,8 +106,18 @@ class DomainChecker
             return false;
         return ($this->dnsRecords->get($entry)->count() > 1) ? $this->dnsRecords->get($entry)->all() : $this->dnsRecords->get($entry)->first();
     }
+    
     /**
-     * DomainChecker::loadDns()
+     * DnsQuerifier::hostnameIsUp()
+     * 
+     * @return
+     */
+    public function hostnameIsUp(){
+        return $this->hostnameIsUp;
+    }
+    
+    /**
+     * DnsQuerifier::loadDnsRecords()
      * 
      * @param mixed $type
      * @return void
@@ -78,10 +128,17 @@ class DomainChecker
      *      (DNS_ALL is better than DNS_ANY, according to php.net)
      *
      */
-    public function loadDns($type = DNS_ANY)
+    protected function loadDnsRecords($type = self::TYPE_ANY)
     {
-        $nsRecords      = dns_get_record($this->domain, $type);
-        $dmarc          = dns_get_record('_dmarc.' . $this->domain, $type);
+        if(!$this->hostname)
+            return false;
+        $nsRecords = dns_get_record($this->hostname,$type);
+        if(!$nsRecords){
+            $this->hostnameIsUp = false;
+            $this->dnsRecords = Collection::make();
+            return false;
+        }
+        $dmarc          = dns_get_record('_dmarc.'.$this->hostname, $type);
         $dmarcEntries   = [];
         if ($dmarc)
         {
@@ -93,8 +150,23 @@ class DomainChecker
         }
         $this->dnsRecords = Collection::make($this->sort(array_merge($nsRecords, $dmarcEntries)));
     }
+    
     /**
-     * DomainChecker::sort()
+     * DnsQuerifier::testRbls()
+     * 
+     * @return
+     */
+    protected function testRbls()
+    {
+        /** check for a record,if exists,we are on the blacklist*/
+        if($this->dnsRecords->has('a')){
+            return $this->getEntry('txt')['entries'][0];
+        }
+        return false;
+    }
+    
+    /**
+     * DnsQuerifier::sort()
      * 
      * @param mixed $nsRecords
      * @return
@@ -103,7 +175,7 @@ class DomainChecker
     {
         if (is_array($nsRecords))
         {
-            $this->rawDns = $nsRecords;
+            $this->rawDnsRecords = $nsRecords;
             foreach ($nsRecords as $dns_record)
             {
                 $current_type = strtolower($dns_record['type']);
@@ -117,8 +189,8 @@ class DomainChecker
                 {
                     if($a=='ns'){
                         foreach($b as $dnsKey=>$dnsValue){
-                            $dnsIps[] = gethostbyname($dnsValue['target']);
-                            $dnsTarget[] = $dnsValue['target'];
+                            $dnsIps[]       = gethostbyname($dnsValue['target']);
+                            $dnsTarget[]    = $dnsValue['target'];
                         }
                         $return['dnsIps']       = Collection::make($dnsIps);
                         $return['dnsTarget']    = Collection::make($dnsTarget);
@@ -131,16 +203,16 @@ class DomainChecker
         return false;
     }
     /**
-     * DomainChecker::raw()
+     * DnsQuerifier::raw()
      * 
      * @return
      */
     public function raw()
     {
-        return $this->rawDns;
+        return $this->rawDnsRecords;
     }
     /**
-     * DomainChecker::nameservers()
+     * DnsQuerifier::nameservers()
      * 
      * @return
      */
@@ -150,7 +222,7 @@ class DomainChecker
     }
     
     /**
-     * DomainChecker::nameservers()
+     * DnsQuerifier::nameservers()
      * 
      * @return
      */
