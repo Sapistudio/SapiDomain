@@ -64,8 +64,7 @@ class DomainChecker
     {
         if (!$this->dnsRecords->has($entry))
             return false;
-        return ($this->dnsRecords->get($entry)->count() > 1) ? $this->dnsRecords->get($entry)->
-            all() : $this->dnsRecords->get($entry)->first();
+        return ($this->dnsRecords->get($entry)->count() > 1) ? $this->dnsRecords->get($entry)->all() : $this->dnsRecords->get($entry)->first();
     }
     /**
      * DomainChecker::loadDns()
@@ -81,8 +80,9 @@ class DomainChecker
      */
     public function loadDns($type = DNS_ANY)
     {
-        $nsRecords = dns_get_record($this->domain, $type);
-        $dmarc = dns_get_record('_dmarc.' . $this->domain, $type);
+        $nsRecords      = dns_get_record($this->domain, $type);
+        $dmarc          = dns_get_record('_dmarc.' . $this->domain, $type);
+        $dmarcEntries   = [];
         if ($dmarc)
         {
             foreach ($dmarc as $a => $entry)
@@ -108,15 +108,21 @@ class DomainChecker
             {
                 $current_type = strtolower($dns_record['type']);
                 if (!isset($dns_sorted[$current_type]))
-                {
                     $dns_sorted[$current_type] = [];
-                }
                 $dns_sorted[$current_type][] = $dns_record;
             }
             if ($dns_sorted)
             {
                 foreach ($dns_sorted as $a => $b)
                 {
+                    if($a=='ns'){
+                        foreach($b as $dnsKey=>$dnsValue){
+                            $dnsIps[] = gethostbyname($dnsValue['target']);
+                            $dnsTarget[] = $dnsValue['target'];
+                        }
+                        $return['dnsIps']       = Collection::make($dnsIps);
+                        $return['dnsTarget']    = Collection::make($dnsTarget);
+                    }
                     $return[$a] = Collection::make($b);
                 }
             }
@@ -140,6 +146,16 @@ class DomainChecker
      */
     public function nameservers()
     {
-        return $this->getEntry('ns');
+        return $this->getEntry('dnsTarget');
+    }
+    
+    /**
+     * DomainChecker::nameservers()
+     * 
+     * @return
+     */
+    public function dnsIps()
+    {
+        return $this->getEntry('dnsIps');
     }
 }
