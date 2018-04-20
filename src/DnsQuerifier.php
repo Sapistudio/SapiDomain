@@ -102,9 +102,7 @@ class DnsQuerifier
      */
     public function getEntry($entry = null)
     {
-        if (!$this->dnsRecords->has($entry))
-            return false;
-        return ($this->dnsRecords->get($entry)->count() > 1) ? $this->dnsRecords->get($entry)->all() : $this->dnsRecords->get($entry)->first();
+        return (!$this->dnsRecords->has($entry)) ? false : $this->dnsRecords->get($entry)->all();
     }
     
     /**
@@ -189,8 +187,8 @@ class DnsQuerifier
                 {
                     if($a=='ns'){
                         foreach($b as $dnsKey=>$dnsValue){
-                            $dnsIps[]       = gethostbyname($dnsValue['target']);
-                            $dnsTarget[]    = $dnsValue['target'];
+                            $dnsIps[$dnsKey]    = gethostbyname($dnsValue['target']);
+                            $dnsTarget[$dnsKey] = $dnsValue['target'];
                         }
                         $return['dnsIps']       = Collection::make($dnsIps);
                         $return['dnsTarget']    = Collection::make($dnsTarget);
@@ -201,6 +199,52 @@ class DnsQuerifier
             return $return;
         }
         return false;
+    }
+    
+    /**
+     * DnsQuerifier::getSummary()
+     * 
+     * @return void
+     */
+    public function getSummary(){
+        $summary = [];
+        if($this->dnsRecords->has('a')){
+            $aEntries = $this->getEntry('a');
+            foreach($aEntries as $entryKey=>$entryData){
+                $summary['a'][] = $entryData['host'].' - '.$entryData['ip'];
+            }
+        }
+        if($this->dnsRecords->has('aaaa')){
+            $aEntries = $this->getEntry('aaaa');
+            foreach($aEntries as $entryKey=>$entryData){
+                $summary['aaaa'][] = $entryData['host'].' - '.$entryData['ipv6'];
+            }
+        }
+        if($this->dnsRecords->has('ns')){
+            $aEntries = $this->getEntry('ns');
+            foreach($aEntries as $entryKey=>$entryData){
+                $summary['ns'][] = $entryData['target'].' - '.$this->getEntry('dnsIps')[$entryKey];
+            }
+        }
+        if($this->dnsRecords->has('soa')){
+            $aEntries = $this->getEntry('soa');
+            foreach($aEntries as $entryKey=>$entryData){
+                $summary['soa'][] = 'Ttl:'.$entryData['ttl'].' - '.$entryData['rname'];
+            }
+        }
+        if($this->dnsRecords->has('txt')){
+            $aEntries = $this->getEntry('txt');
+            foreach($aEntries as $entryKey=>$entryData){
+                $summary['txt'][] = $entryData['txt'];
+            }
+        }
+        if($this->dnsRecords->has('mx')){
+            $aEntries = $this->getEntry('mx');
+            foreach($aEntries as $entryKey=>$entryData){
+                $summary['mx'][] = $entryData['target'].' - '.$entryData['ttl'];
+            }
+        }
+        return $summary;
     }
     
     /**
