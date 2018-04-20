@@ -202,6 +202,17 @@ class DnsQuerifier
         }
         return false;
     }
+    
+    /**
+     * DnsQuerifier::getDnsRecords()
+     * 
+     * @return
+     */
+    public function getDnsRecords()
+    {
+        return $this->dnsRecords;
+    }
+    
     /**
      * DnsQuerifier::raw()
      * 
