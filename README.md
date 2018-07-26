@@ -1,8 +1,26 @@
 # DnsRecords
 
+## Check ip or domain against blacklists
 ```php
-use SapiStudio\DnsRecords\DnsQuerifier;
+use SapiStudio\DnsRecords\Querifier;
 
-DnsQuerifier::blacklistLookup($ipValue,$rblArrayList);
-DnsQuerifier::hostLookup($domainName)
+Querifier::blacklistLookup($ipValue);
+```
+
+## Get all DNS records for a domain
+```php
+use SapiStudio\DnsRecords\Querifier;
+
+Querifier::hostLookup($domainName);
+```
+
+## Initialize querifier with a custom getter(dig or php)
+```php
+use SapiStudio\DnsRecords\Querifier;
+
+$querifier = Querifier::make($domainName,'php');
+//load all records
+$querifier->loadDnsRecords();
+//get txt entries
+$querifier->getTxtRecords();
 ```
