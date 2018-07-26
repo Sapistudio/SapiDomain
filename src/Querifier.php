@@ -285,7 +285,7 @@ class Querifier
     {
         if(!$this->dnsRecords)
             return false;
-        $method = ($firstEntry) ? 'first' : 'all';
+        $method = ($firstEntry) ? 'first' : 'toArray';
         return (!$this->dnsRecords->has($entryType)) ? false : $this->dnsRecords->get($entryType)->$method();
     }
     
