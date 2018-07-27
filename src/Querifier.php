@@ -16,8 +16,6 @@ use SapiStudio\DnsRecords\Getter\RecordPhp as Php;
  
 class Querifier
 {
-    const GETTER_PHP        = 'php';
-    const GETTER_DIG        = 'dig';
     protected $hostname;
     protected $rawDnsRecords= [];
     protected $dnsRecords   = null;
@@ -71,7 +69,6 @@ class Querifier
             return false;
         $ipBlacklisted = false;
         foreach($rbls as $key=>$rblUrl){
-            echo $adressToCheck.'.'.$rblUrl."\n";
             $blacklisted    = self::hostLookup($adressToCheck.'.'.$rblUrl);
             if($blacklisted->getEntries(self::$A)){
                 $ipBlacklisted  = true;
@@ -99,7 +96,6 @@ class Querifier
                 return new Dig($host);
                 break;
             case 'php':
-            
                 return new Php($host);
                 break;
         }
@@ -119,21 +115,19 @@ class Querifier
     /**
      * Querifier::getSpfRecord()
      * 
-     * @param mixed $host
-     * @param mixed $getterRecord
      * @return
      */
-    public function getSpfRecord($host, $getterRecord = null){
+    public function getSpfRecord(){
         $records    = $this->getTxtRecords();
         if(!$records)
             return self::SPF_PERMERROR;
         $spfRecord  = false;
+        print_R($records);
         foreach($records as $record) {
-            $txt = strtolower($record['txt']);
-            if ($txt == 'v=spf1' || stripos($txt, 'v=spf1 ') === 0) {
+            if (preg_match("/^v=spf(.*)/i", $record['txt'])){
                 if($spfRecord)
                     return self::SPF_PERMERROR;
-                $spfRecord = $txt;
+                $spfRecord = $record['txt'];
             }
         }
         return $spfRecord;
@@ -150,7 +144,7 @@ class Querifier
         $this->setHost(SELF::DMARC_DNS_ADDRES.$currentHost);
         $dmarc = $this->loadDnsRecords(self::$TXT)->getEntries(self::$TXT,true);
         $this->setHost($currentHost);
-        return ($dmarc) ? $dmarc['entries'][0] : false;
+        return ($dmarc) ? $dmarc['txt'] : false;
     }
     
     /**
@@ -329,6 +323,7 @@ class Querifier
         {
             foreach ($this->rawDnsRecords as $dns_record)
             {
+                $dns_record['type'] = strtoupper($dns_record['type']);                
                 if (!isset($dns_sorted[$dns_record['type']]))
                     $dns_sorted[$dns_record['type']] = [];
                 $dns_sorted[$dns_record['type']][] = $dns_record;
@@ -337,7 +332,7 @@ class Querifier
             {
                 foreach ($dns_sorted as $dnsType => $dnsData)
                 {
-                    if($dnsType=='NS'){
+                    if($dnsType == self::$NS){
                         foreach($dnsData as $dnsKey=>$dnsValue)
                             $dnsTarget[$dnsValue['target']] = gethostbyname($dnsValue['target']);
                         $return['dnsTarget']    = Collection::make($dnsTarget);
