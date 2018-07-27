@@ -48,7 +48,7 @@ class DmarcAnalyzer
      * @return
      */
     public function loadDmarcTags(){
-        $this->dmarcTags = include('../config/dmarcTags.php');;
+        $this->dmarcTags = include(dirname(__FILE__).'/../config/dmarcTags.php');
     }
     
     /**
@@ -57,8 +57,9 @@ class DmarcAnalyzer
      * @return
      */
     public function parseDmarcLine(){
-        $result = [];
-        array_walk(array_filter(array_map("trim",explode(';',$this->dmarcLine))), function($value,$key) use (&$result){
+        $result     = [];
+        $dmarcLine  = array_filter(array_map("trim",explode(';',$this->dmarcLine)));
+        array_walk($dmarcLine, function($value,$key) use (&$result){
             list($tag,$tagvalue) = explode("=", $value);
             $result[$tag] = $tagvalue;
 });
