@@ -18,7 +18,7 @@ Querifier::hostLookup($domainName);
 ```php
 use SapiStudio\DnsRecords\Querifier;
 
-$querifier = Querifier::make($domainName,'php');
+$querifier = Querifier::make($domainName,Querifier::GETTER_PHP);//or Querifier::GETTER_DIG
 //load all records
 $querifier->loadDnsRecords();
 //get txt entries
