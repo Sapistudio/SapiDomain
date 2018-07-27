@@ -16,6 +16,8 @@ use SapiStudio\DnsRecords\Getter\RecordPhp as Php;
  
 class Querifier
 {
+    const GETTER_PHP        = 'php';
+    const GETTER_DIG        = 'dig';
     protected $hostname;
     protected $rawDnsRecords= [];
     protected $dnsRecords   = null;
