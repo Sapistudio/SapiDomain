@@ -16,6 +16,9 @@ use SapiStudio\DnsRecords\Getter\RecordPhp as Php;
  
 class Querifier
 {
+    const GETTER_PHP        = 'php';	
+    const GETTER_DIG        = 'dig';
+    
     protected $hostname;
     protected $rawDnsRecords= [];
     protected $dnsRecords   = null;
@@ -122,7 +125,6 @@ class Querifier
         if(!$records)
             return self::SPF_PERMERROR;
         $spfRecord  = false;
-        print_R($records);
         foreach($records as $record) {
             if (preg_match("/^v=spf(.*)/i", $record['txt'])){
                 if($spfRecord)
