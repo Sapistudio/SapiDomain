@@ -136,6 +136,14 @@ class Querifier
     }
     
     /**
+     * Querifier::hasDmarc()
+     * 
+     * @return
+     */
+    public function hasDmarc(){
+        return ($this->getDmarcRecord()) ? true : false;
+    }
+    /**
      * Querifier::getDmarcRecord()
      * 
      * @return
@@ -146,7 +154,7 @@ class Querifier
         $this->setHost(SELF::DMARC_DNS_ADDRES.$currentHost);
         $dmarc = $this->loadDnsRecords(self::$TXT)->getEntries(self::$TXT,true);
         $this->setHost($currentHost);
-        return ($dmarc) ? $dmarc['txt'] : false;
+        return ($dmarc) ? Analyzer\DmarcAnalyzer::create($dmarc['txt']) : false;
     }
     
     /**
