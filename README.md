@@ -13,6 +13,12 @@ use SapiStudio\DnsRecords\Querifier;
 
 Querifier::hostLookup($domainName);
 ```
+## Check DMARC record
+```php
+use SapiStudio\DnsRecords\Querifier;
+
+Querifier::make($domainName)->getDmarcRecord()
+```
 
 ## Initialize querifier with a custom getter(dig or php)
 ```php
