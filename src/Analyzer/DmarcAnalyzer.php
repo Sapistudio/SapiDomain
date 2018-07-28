@@ -1,6 +1,6 @@
 <?php
 namespace SapiStudio\DnsRecords\Analyzer;
-use SapiStudio\DnsRecords\Querifier;
+use Illuminate\Support\Collection;
 
 /**
  * DmarcAnalyzer
@@ -43,6 +43,15 @@ class DmarcAnalyzer
     }
     
     /**
+     * DmarcAnalyzer::getDmarcPolicy()
+     * 
+     * @return
+     */
+    public function getDmarcPolicy(){
+        return $this->dmarcLineParsed->get('p','none');
+    }
+    
+    /**
      * DmarcAnalyzer::loadDmarcTags()
      * 
      * @return
@@ -63,7 +72,7 @@ class DmarcAnalyzer
             list($tag,$tagvalue) = explode("=", $value);
             $result[$tag] = $tagvalue;
 });
-        $this->dmarcLineParsed = $result;
+        $this->dmarcLineParsed = Collection::make($result);
         return $this;
     }
     
