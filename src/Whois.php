@@ -25,7 +25,7 @@ class Whois
      */
     public function __construct()
     {
-        $this->whoisServers = json_decode(file_get_contents(__DIR__ . '/../config/servers.json'));
+        $this->whoisServers = json_decode(file_get_contents(__DIR__.'/config/servers.json'));
     }
     
     /**
