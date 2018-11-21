@@ -1,5 +1,5 @@
 {
-    "name": "sapistudio/dnsrecords",
+    "name": "sapistudio/domain",
     "type": "library",
     "license": "MIT",
     "require": {
