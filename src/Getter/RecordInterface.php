@@ -1,12 +1,10 @@
 <?php
-namespace SapiStudio\DnsRecords\Getter;
+namespace SapiStudio\Domain\Getter;
 
 interface RecordInterface
 {
     /**
      * queryDns()
-     * 
-     * @return
      */
     public function queryDns($type);
 }

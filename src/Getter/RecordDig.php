@@ -1,17 +1,12 @@
 <?php
-namespace SapiStudio\DnsRecords\Getter;
-use SapiStudio\DnsRecords\Querifier;
+namespace SapiStudio\Domain\Getter;
+use SapiStudio\Domain\DnsQuerifier;
 
 /**
  * RecordDig
- * 
- * @package 
- * @copyright 2017
- * @version $Id$
- * @access public
  */
  
-class RecordDig extends Querifier implements RecordInterface
+class RecordDig extends DnsQuerifier implements RecordInterface
 {
     protected $queryServer  = '';
     CONST DEFAULT_TYPE      = "ANY";

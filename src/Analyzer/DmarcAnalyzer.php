@@ -1,14 +1,10 @@
 <?php
-namespace SapiStudio\DnsRecords\Analyzer;
+namespace SapiStudio\Domain\Analyzer;
 use Illuminate\Support\Collection;
 
 /**
  * DmarcAnalyzer
  * 
- * @package 
- * @copyright 2017
- * @version $Id$
- * @access public
  */
 
 class DmarcAnalyzer
@@ -19,9 +15,6 @@ class DmarcAnalyzer
     
     /**
      * DmarcAnalyzer::create()
-     * 
-     * @param mixed $dmarcLine
-     * @return
      */
     public static function create($dmarcLine = null)
     {
@@ -30,9 +23,6 @@ class DmarcAnalyzer
     
     /**
      * DmarcAnalyzer::__construct()
-     * 
-     * @param mixed $dmarcLine
-     * @return
      */
     public function __construct($dmarcLine){
         if(!$dmarcLine)
@@ -44,8 +34,6 @@ class DmarcAnalyzer
     
     /**
      * DmarcAnalyzer::getDmarcPolicy()
-     * 
-     * @return
      */
     public function getDmarcPolicy(){
         return $this->dmarcLineParsed->get('p','none');
@@ -53,8 +41,6 @@ class DmarcAnalyzer
     
     /**
      * DmarcAnalyzer::loadDmarcTags()
-     * 
-     * @return
      */
     public function loadDmarcTags(){
         $this->dmarcTags = include(dirname(__FILE__).'/../config/dmarcTags.php');
@@ -62,8 +48,6 @@ class DmarcAnalyzer
     
     /**
      * DmarcAnalyzer::parseDmarcLine()
-     * 
-     * @return
      */
     public function parseDmarcLine(){
         $result     = [];
@@ -78,8 +62,6 @@ class DmarcAnalyzer
     
     /**
      * DmarcAnalyzer::getDmarcLine()
-     * 
-     * @return
      */
     public function getDmarcLine(){
         return $this->dmarcLine;
@@ -87,9 +69,6 @@ class DmarcAnalyzer
     
     /**
      * DmarcAnalyzer::setDmarcLine()
-     * 
-     * @param mixed $dmarcLine
-     * @return
      */
     public function setDmarcLine($dmarcLine){
         $this->dmarcLine = $dmarcLine;

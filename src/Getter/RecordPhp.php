@@ -1,6 +1,6 @@
 <?php
-namespace SapiStudio\DnsRecords\Getter;
-use SapiStudio\DnsRecords\Querifier;
+namespace SapiStudio\Domain\Getter;
+use SapiStudio\Domain\DnsQuerifier;
 
 /**
  * RecordPhp
@@ -11,7 +11,7 @@ use SapiStudio\DnsRecords\Querifier;
  * @access public
  */
 
-class RecordPhp extends Querifier implements RecordInterface
+class RecordPhp extends DnsQuerifier implements RecordInterface
 {
     public static $QUERY_TYPES = [
         "A"     => DNS_A,
@@ -29,8 +29,6 @@ class RecordPhp extends Querifier implements RecordInterface
     
     /**
      * RecordPhp::queryDns()
-     * 
-     * @return
      */
     public function queryDns($type)
     {
