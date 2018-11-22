@@ -4,7 +4,7 @@
     "license": "MIT",
     "require": {
         "php": ">=5.6",
-        "sapistudio/socket": "1.*",
+        "sapistudio/socket": "^2.0",
          "illuminate/support": "5.4.*"
     },
     "autoload": {
