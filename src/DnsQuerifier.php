@@ -7,7 +7,6 @@ use SapiStudio\Domain\Getter\RecordPhp as Php;
 
 /**
  * DnsQuerifier
- * 
  */
  
 class DnsQuerifier
@@ -18,7 +17,6 @@ class DnsQuerifier
     protected $hostname;
     protected $rawDnsRecords= [];
     protected $dnsRecords   = null;
-    protected $hostnameIsUp = true;/** default , we assume that domain is up,*/
     
     public static $A        = 'A';
     public static $CNAME    = "CNAME";
@@ -30,22 +28,7 @@ class DnsQuerifier
     public static $TXT      = "TXT";
     public static $AAAA     = "AAAA";
     public static $ANY      = "ANY";
-    
     const DMARC_DNS_ADDRES  = '_dmarc.';
-    const RESULT_PASS       = 'Spf valid';
-    const RESULT_FAIL       = 'Spf fail';
-    const RESULT_SOFTFAIL   = 'Spf soft fail';
-    const RESULT_NEUTRAL    = '?';
-    const RESULT_NONE       = 'No spf';
-    const SPF_PERMERROR     = 'Spf error';
-    
-    /**
-     * DnsQuerifier::hostLookup()
-     */
-    public static function hostLookup($host,$getterRecord = null)
-    {
-        return self::make($host,$getterRecord)->loadDnsRecords();
-    }
     
     /**
      * DnsQuerifier::blacklistLookup()
@@ -54,13 +37,14 @@ class DnsQuerifier
     {
         if(!$rbls)
             $rbls = include('config/rblConfig.php');
-        $rbls           = ((bool)ip2long($adressToCheck)) ? array_keys($rbls['ipBased']) : (array_keys($rbls['domainBased']));
-        $adressToCheck  = ((bool)ip2long($adressToCheck)) ? self::reverseIp($adressToCheck) : self::sanitizeDomainName($adressToCheck);
+        $isIp           = (bool)ip2long($adressToCheck);
+        $rbls           = ($isIp) ? array_keys($rbls['ipBased']) : (array_keys($rbls['domainBased']));
+        $adressToCheck  = ($isIp) ? self::reverseIp($adressToCheck) : self::sanitizeDomainName($adressToCheck);
         if(!$adressToCheck || !$rbls)
             return false;
         $ipBlacklisted = false;
         foreach($rbls as $key=>$rblUrl){
-            $blacklisted    = self::hostLookup($adressToCheck.'.'.$rblUrl);
+            $blacklisted    = self::dnsCheck($adressToCheck.'.'.$rblUrl);
             if($blacklisted->getEntries(self::$A)){
                 $ipBlacklisted  = true;
                 $txtEntry       = $blacklisted->getEntries(self::$TXT,true);
@@ -70,6 +54,14 @@ class DnsQuerifier
             $results[$rblUrl]   = $reason;
         }
         return ['blacklisted' => (int)$ipBlacklisted, 'results' => $results];
+    }
+    
+    /**
+     * DnsQuerifier::dnsCheck()
+     */
+    public static function dnsCheck($host,$getterRecord = null)
+    {
+        return self::make($host,$getterRecord)->loadDnsRecords();
     }
     
     /**
@@ -97,28 +89,25 @@ class DnsQuerifier
     }
     
     /**
-     * DnsQuerifier::getSpfRecord()
-     */
-    public function getSpfRecord(){
-        $records    = $this->getTxtRecords();
-        if(!$records)
-            return self::SPF_PERMERROR;
-        $spfRecord  = false;
-        foreach($records as $record) {
-            if (preg_match("/^v=spf(.*)/i", $record['txt'])){
-                if($spfRecord)
-                    return self::SPF_PERMERROR;
-                $spfRecord = $record['txt'];
-            }
-        }
-        return $spfRecord;
-    }
-    
-    /**
      * DnsQuerifier::hasDmarc()
      */
     public function hasDmarc(){
         return ($this->getDmarcRecord()) ? true : false;
+    }
+    
+    /**
+     * DnsQuerifier::hasSpf)
+     */
+    public function hasSpf(){
+        return ($this->getSpfRecord()) ? true : false;
+    }
+    
+    
+    /**
+     * DnsQuerifier::getSpfRecord()
+     */
+    public function getSpfRecord(){
+        return Analyzer\SpfAnalyzer::create($this->getTxtRecords())->getSpf();
     }
     
     /**
@@ -129,47 +118,8 @@ class DnsQuerifier
         $currentHost = $this->getHost();
         $this->setHost(SELF::DMARC_DNS_ADDRES.$currentHost);
         $dmarc = $this->loadDnsRecords(self::$TXT)->getEntries(self::$TXT,true);
-        $this->setHost($currentHost);
+        $this->setHost($currentHost)->loadDnsRecords();
         return ($dmarc) ? Analyzer\DmarcAnalyzer::create($dmarc['txt']) : false;
-    }
-    
-    /**
-     * DnsQuerifier::getDnsSummary()
-     */
-    public function getDnsSummary(){
-        $summary    = [];
-        $aEntries   = $this->getEntries(self::$A);
-        if($aEntries){
-            foreach($aEntries as $entryKey=>$entryData)
-                $summary[self::$A][] = $entryData['host'].' - '.$entryData['ip'];
-        }
-        $aaEntries = $this->getEntries(self::$AAAA);
-        if($aaEntries){
-            foreach($aaEntries as $entryKey=>$entryData){
-                $ip = (isset($entryData['ip6'])) ? $entryData['ip6'] : $entryData['ipv6'];
-                $summary[self::$AAAA][] = $entryData['host'].' - '.$ip;
-            }  
-        }
-        $targetEntries = $this->getEntries('dnsTarget');
-        if($targetEntries){
-            $summary[self::$NS] = $targetEntries;
-        }
-        $soaEntries = $this->getEntries(self::$SOA);
-        if($soaEntries){
-            foreach($soaEntries as $entryKey=>$entryData)
-                $summary[self::$SOA][] = 'Ttl:'.$entryData['ttl'].' - '.$entryData['rname'];
-        }
-        $txtEntries = $this->getEntries(self::$TXT);
-        if($txtEntries){
-            foreach($txtEntries as $entryKey=>$entryData)
-                $summary[self::$TXT][] = $entryData['txt'];
-        }
-        $mxEntries = $this->getEntries(self::$MX);
-        if($mxEntries){
-            foreach($mxEntries as $entryKey=>$entryData)
-                $summary[self::$MX][] = $entryData['target'].' - '.$entryData['ttl'];
-        }
-        return $summary;
     }
     
     /**
@@ -197,19 +147,11 @@ class DnsQuerifier
     }
     
     /**
-     * DnsQuerifier::getDnsRecords()
+     * DnsQuerifier::getAllRecords()
      */
-    public function getDnsRecords()
+    public function getAllRecords()
     {
         return $this->dnsRecords->toArray();
-    }
-    
-    /**
-     * DnsQuerifier::nameservers()
-     */
-    public function nameservers()
-    {
-        return array_keys($this->getEntries('dnsTarget'));
     }
     
     /**
@@ -217,7 +159,12 @@ class DnsQuerifier
      */
     public function dnsIps()
     {
-        return array_values($this->getEntries('dnsTarget'));
+        $dnsTarget = [];
+        if($this->getEntries(self::$NS)){
+            foreach(array_column($this->getEntries(self::$NS),'target') as $entryKey=>$targetValue)
+                $dnsTarget[$targetValue] = gethostbyname($targetValue);
+        }
+        return array_Values($dnsTarget);
     }
     
     /**
@@ -249,23 +196,14 @@ class DnsQuerifier
     }
     
     /**
-     * DnsQuerifier::hostnameIsUp()
-     */
-    public function hostnameIsUp(){
-        return $this->hostnameIsUp;
-    }
-    
-    /**
      * DnsQuerifier::loadDnsRecords()
      */
-    public function loadDnsRecords($type = null,$returnEntries = false)
+    public function loadDnsRecords($type = null)
     {
         if(!$this->hostname)
             throw new \InvalidArgumentException('A domain name is required');
-        $this->rawDnsRecords = $this->queryDns(strtoupper($type));
-        if(!$this->rawDnsRecords)
-            $this->hostnameIsUp = false;
-        $this->dnsRecords = Collection::make($this->sortRecords());
+        $this->rawDnsRecords    = $this->queryDns(strtoupper($type));
+        $this->dnsRecords       = Collection::make($this->sortRecords());
         return $this;
     }
   
@@ -286,18 +224,38 @@ class DnsQuerifier
             if ($dns_sorted)
             {
                 foreach ($dns_sorted as $dnsType => $dnsData)
-                {
-                    if($dnsType == self::$NS){
-                        foreach($dnsData as $dnsKey=>$dnsValue)
-                            $dnsTarget[$dnsValue['target']] = gethostbyname($dnsValue['target']);
-                        $return['dnsTarget']    = Collection::make($dnsTarget);
-                    }
                     $return[strtoupper($dnsType)] = Collection::make($dnsData);
-                }
             }
             return $return;
         }
         return [];
+    }
+    
+    /**
+     * DnsQuerifier::summary()
+     */
+    public function summary(){
+        $summary    = [];
+        if($this->getEntries(self::$A))
+            $summary['entries'][self::$A] = array_column($this->getEntries(self::$A),'ip');
+        if($this->getEntries(self::$NS))
+            $summary['entries'][self::$NS] = array_column($this->getEntries(self::$NS),'target');
+        if($this->getEntries(self::$TXT))
+            $summary['entries'][self::$TXT] = array_column($this->getEntries(self::$TXT),'txt');
+        foreach($this->getEntries(self::$AAAA) as $entryKey=>$entryData){
+            $ip = (isset($entryData['ip6'])) ? $entryData['ip6'] : $entryData['ipv6'];
+            $summary['entries'][self::$AAAA][] = $entryData['host'].' - '.$ip;
+        }
+        foreach($this->getEntries(self::$SOA) as $entryKey=>$entryData)
+            $summary['entries'][self::$SOA][] = 'Ttl:'.$entryData['ttl'].' - '.$entryData['rname'];
+        foreach($this->getEntries(self::$MX) as $entryKey=>$entryData)
+            $summary['entries'][self::$MX][] = $entryData['target'].' - '.$entryData['ttl'];
+        $summary['hasSpf'] = $this->hasSpf();
+        $summary['hasDmarc'] = $this->hasDmarc();
+        $whois = Whois::load($this->hostname);
+        $summary['whois'] = str_replace(["\n","\r",'"'],['<br>',"",""],$whois->getWhois());
+        $summary['exists'] = $whois->isAvailable();
+        return $summary;
     }
     
     /**

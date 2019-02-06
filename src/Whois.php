@@ -36,10 +36,36 @@ class Whois
     }
     
     /**
+     * Whois::parseWhois()
+     */
+    public function parseWhois(){
+        $data = explode('>>>',$this->getWhois());
+        preg_match_all('/^[a-z A-Z](.*)\b: \b.*$/m', $data[0], $matches);
+        if($matches[0]){
+            foreach($matches[0] as $index=>$line){
+                list($argument,$value) = explode(': ',trim(strtolower($line)));
+                $argument = explode(' ',$argument);
+                $option = array_shift($argument);
+                if(count($argument) > 3)
+                    continue;
+                if(isset($return[$option][implode('',$argument)])){
+                    if(is_array($return[$option][implode('',$argument)])){
+                        $return[$option][implode('',$argument)][] = $value;
+                    }else{
+                        $return[$option][implode('',$argument)] = [$return[$option][implode('',$argument)],$value];
+                    }
+                }else
+                    $return[$option][implode('',$argument)] = $value;
+            }
+        }
+        return $return;
+    }
+    
+    /**
      * Whois::isAvailable()
      */
     public function isAvailable(){
-        return (strpos($this->whoisResult,$this->whoisServerInfo->not_found) !== false) ? true : false;
+        return (strpos($this->whoisResult,$this->whoisServerInfo->not_found) !== false) ? false : true;
         
     }
     
@@ -51,7 +77,7 @@ class Whois
         $domain                 = DomainHandler::create($domain);
         $this->whoisServerInfo  = $this->whoisServers->{$domain->getTld()};
         if(!$this->whoisServerInfo){
-            throw new \Exception(sprintf('The TLD "%s" does not exist.', $domain->getTld()));
+            throw new \Exception(sprintf('The TLD "%s" does not exist:'.$domain, $domain->getTld()));
         }
         try {
             $connection = Connection::open($this->whoisServerInfo->server, 43);

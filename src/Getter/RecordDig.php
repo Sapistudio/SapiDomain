@@ -13,8 +13,6 @@ class RecordDig extends DnsQuerifier implements RecordInterface
     
     /**
      * RecordDig::setQueryServer()
-     * 
-     * @return
      */
     public function setQueryServer(string $nameserver)
     {
@@ -24,8 +22,6 @@ class RecordDig extends DnsQuerifier implements RecordInterface
     
     /**
      * RecordDig::queryDns()
-     * 
-     * @return
      */
     public function queryDns($type)
     {
@@ -38,8 +34,6 @@ class RecordDig extends DnsQuerifier implements RecordInterface
     
     /**
      * RecordDig::parseDigResource()
-     * 
-     * @return
      */
     protected function parseDigResource($digResponse = null)
     {
@@ -54,8 +48,6 @@ class RecordDig extends DnsQuerifier implements RecordInterface
     
     /**
      * RecordDig::getSpecificQueryServer()
-     * 
-     * @return
      */
     protected function getSpecificQueryServer()
     {
@@ -64,8 +56,6 @@ class RecordDig extends DnsQuerifier implements RecordInterface
     
     /**
      * RecordDig::parseDigLine()
-     * 
-     * @return
      */
     protected function parseDigLine($digLine = null)
     {
