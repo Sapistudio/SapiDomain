@@ -5,9 +5,7 @@ use Illuminate\Support\Collection;
 use SapiStudio\Domain\Getter\RecordDig as Dig;
 use SapiStudio\Domain\Getter\RecordPhp as Php;
 
-/**
- * DnsQuerifier
- */
+/**  DnsQuerifier */
  
 class DnsQuerifier
 {
@@ -30,9 +28,7 @@ class DnsQuerifier
     public static $ANY      = "ANY";
     const DMARC_DNS_ADDRES  = '_dmarc.';
     
-    /**
-     * DnsQuerifier::blacklistLookup()
-     */
+    /** DnsQuerifier::blacklistLookup() */
     public static function blacklistLookup($adressToCheck = null,$rbls = [])
     {
         if(!$rbls)
@@ -56,17 +52,13 @@ class DnsQuerifier
         return ['blacklisted' => (int)$ipBlacklisted, 'results' => $results];
     }
     
-    /**
-     * DnsQuerifier::dnsCheck()
-     */
+    /** DnsQuerifier::dnsCheck()  */
     public static function dnsCheck($host,$getterRecord = null)
     {
         return self::make($host,$getterRecord)->loadDnsRecords();
     }
     
-    /**
-     * DnsQuerifier::make()
-     */
+    /** DnsQuerifier::make()*/
     public static function make($host = null, $getterRecord = null)
     {
         switch(strtolower($getterRecord)){
@@ -80,83 +72,63 @@ class DnsQuerifier
         }
     }
     
-    /**
-     * DnsQuerifier::__construct()
-     */
+    /** DnsQuerifier::__construct() */
     public function __construct($hostName)
     {
         $this->setHost($hostName);
     }
     
-    /**
-     * DnsQuerifier::hasDmarc()
-     */
+    /** DnsQuerifier::hasDmarc()  */
     public function hasDmarc(){
-        return ($this->getDmarcRecord()) ? true : false;
+        return (int) Analyzer\DmarcAnalyzer::create($this->getDmarcRecord())->dmarcIsValid();
     }
     
-    /**
-     * DnsQuerifier::hasSpf)
-     */
+    /**  DnsQuerifier::hasSpf)*/
     public function hasSpf(){
         return ($this->getSpfRecord()) ? true : false;
     }
     
     
-    /**
-     * DnsQuerifier::getSpfRecord()
-     */
+    /** DnsQuerifier::getSpfRecord() */
     public function getSpfRecord(){
         return Analyzer\SpfAnalyzer::create($this->getTxtRecords())->getSpf();
     }
     
-    /**
-     * DnsQuerifier::getDmarcRecord()
-     */
+    /** DnsQuerifier::getDmarcRecord()*/
     public function getDmarcRecord()
     {
         $currentHost = $this->getHost();
         $this->setHost(SELF::DMARC_DNS_ADDRES.$currentHost);
         $dmarc = $this->loadDnsRecords(self::$TXT)->getEntries(self::$TXT,true);
         $this->setHost($currentHost)->loadDnsRecords();
-        return ($dmarc) ? Analyzer\DmarcAnalyzer::create($dmarc['txt']) : false;
+        return ($dmarc) ? $dmarc['txt'] : null;
     }
     
-    /**
-     * DnsQuerifier::getTxtRecords()
-     */
+    /** DnsQuerifier::getTxtRecords() */
     public function getTxtRecords()
     {
         return $this->loadDnsRecords(self::$TXT)->getEntries(self::$TXT);
     }
     
-    /**
-     * DnsQuerifier::getARecords()
-     */
+    /** DnsQuerifier::getARecords() */
     public function getARecords()
     {
         return $this->loadDnsRecords(self::$A)->getEntries(self::$A);
     }
     
-    /**
-     * DnsQuerifier::getMxRecords()
-     */
+    /** DnsQuerifier::getMxRecords()*/
     public function getMxRecords()
     {
         return $this->loadDnsRecords(self::$MX)->getEntries(self::$MX);
     }
     
-    /**
-     * DnsQuerifier::getAllRecords()
-     */
+    /** DnsQuerifier::getAllRecords()*/
     public function getAllRecords()
     {
         return $this->dnsRecords->toArray();
     }
     
-    /**
-     * DnsQuerifier::dnsIps()
-     */
+    /** DnsQuerifier::dnsIps()*/
     public function dnsIps()
     {
         $dnsTarget = [];
@@ -167,26 +139,20 @@ class DnsQuerifier
         return array_Values($dnsTarget);
     }
     
-    /**
-     * DnsQuerifier::getHost()
-     */
+    /** DnsQuerifier::getHost() */
     public function getHost()
     {
         return $this->hostname;
     }
     
-    /**
-     * DnsQuerifier::setHost()
-     */
+    /** DnsQuerifier::setHost()*/
     public function setHost($hostName)
     {
         $this->hostname = self::sanitizeDomainName($hostName);
         return $this;
     }
 
-    /**
-     * DnsQuerifier::getEntries()
-     */
+    /** DnsQuerifier::getEntries() */
     public function getEntries($entryType = null,$firstEntry = false)
     {
         if(!$this->dnsRecords)
@@ -195,9 +161,7 @@ class DnsQuerifier
         return (!$this->dnsRecords->has($entryType)) ? false : $this->dnsRecords->get($entryType)->$method();
     }
     
-    /**
-     * DnsQuerifier::loadDnsRecords()
-     */
+    /** DnsQuerifier::loadDnsRecords() */
     public function loadDnsRecords($type = null)
     {
         if(!$this->hostname)
@@ -207,9 +171,7 @@ class DnsQuerifier
         return $this;
     }
   
-    /**
-     * DnsQuerifier::sortRecords()
-     */
+    /** DnsQuerifier::sortRecords() */
     protected function sortRecords()
     {
         if (is_array($this->rawDnsRecords))
@@ -231,9 +193,7 @@ class DnsQuerifier
         return [];
     }
     
-    /**
-     * DnsQuerifier::summary()
-     */
+    /** DnsQuerifier::summary() */
     public function summary(){
         $summary    = [];
         if($this->getEntries(self::$A))
@@ -258,9 +218,7 @@ class DnsQuerifier
         return $summary;
     }
     
-    /**
-     * DnsQuerifier::reverseIp()
-     */
+    /** DnsQuerifier::reverseIp() */
     protected static function reverseIp($ipAddress,$ptr = false)
     {
         if (stripos($ipAddress, '.') !== false) {
@@ -272,9 +230,7 @@ class DnsQuerifier
         }
     }
     
-    /**
-     * DnsQuerifier::sanitizeDomainName()
-     */
+    /** DnsQuerifier::sanitizeDomainName() */
     protected static function sanitizeDomainName($domain)
     {
         return strtolower(strtok(str_replace(['http://', 'https://'], '', $domain), '/'));
