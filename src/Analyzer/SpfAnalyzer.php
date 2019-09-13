@@ -1,9 +1,7 @@
 <?php
 namespace SapiStudio\Domain\Analyzer;
 
-/**
- * SpfAnalyzer
- */
+/** SpfAnalyzer */
 
 class SpfAnalyzer
 {
@@ -17,25 +15,19 @@ class SpfAnalyzer
     const SPF_RESULT_NONE           = 'No spf';
     const SPF_RESULT_PERMERROR      = 'Spf error';
     
-    /**
-     * SpfAnalyzer::create()
-     */
+    /** SpfAnalyzer::create() */
     public static function create($data = [])
     {
         return new static($data);
     }
     
-    /**
-     * SpfAnalyzer::__construct()
-     */
+    /** SpfAnalyzer::__construct()*/
     public function __construct($data){
         $this->setDnsData($data);
         $this->parseSpf();
     }
     
-    /**
-     * SpfAnalyzer::parseSpf()
-     */
+    /** SpfAnalyzer::parseSpf() */
     public function parseSpf(){
         if(!$this->getDnsData()){
             $this->parsedSpf = false;
@@ -59,23 +51,17 @@ class SpfAnalyzer
         return $this;
     }
     
-    /**
-     * SpfAnalyzer::getSpf()
-     */
+    /** SpfAnalyzer::getSpf()*/
     public function getSpf(){
         return $this->parsedSpf;
     }
     
-    /**
-     * SpfAnalyzer::getDnsData()
-     */
+    /** SpfAnalyzer::getDnsData() */
     public function getDnsData(){
         return $this->rawRecords;
     }
     
-    /**
-     * SpfAnalyzer::setDnsData()
-     */
+    /**  SpfAnalyzer::setDnsData() */
     public function setDnsData($data){
         $this->rawRecords = $data;
     }
