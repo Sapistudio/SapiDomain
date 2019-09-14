@@ -214,7 +214,7 @@ class DnsQuerifier
         $summary['hasDmarc'] = $this->hasDmarc();
         $whois = Whois::load($this->hostname);
         $summary['whois'] = str_replace(["\n","\r",'"'],['<br>',"",""],$whois->getWhois());
-        $summary['exists'] = $whois->isAvailable();
+        $summary['isRegistered'] = $whois->isAvailable();
         return $summary;
     }
     
