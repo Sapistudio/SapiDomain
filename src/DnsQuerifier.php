@@ -80,7 +80,7 @@ class DnsQuerifier
     
     /** DnsQuerifier::hasDmarc()  */
     public function hasDmarc(){
-        return (int) Analyzer\DmarcAnalyzer::create($this->getDmarcRecord())->dmarcIsValid();
+        return (int) $this->getDmarcAnalyzer()->dmarcIsValid();
     }
     
     /**  DnsQuerifier::hasSpf)*/
@@ -91,7 +91,7 @@ class DnsQuerifier
     
     /** DnsQuerifier::getSpfRecord() */
     public function getSpfRecord(){
-        return Analyzer\SpfAnalyzer::create($this->getTxtRecords())->getSpf();
+        return $this->getSpfAnalyzer()->getSpf();
     }
     
     /** DnsQuerifier::getDmarcRecord()*/
@@ -102,6 +102,16 @@ class DnsQuerifier
         $dmarc = $this->loadDnsRecords(self::$TXT)->getEntries(self::$TXT,true);
         $this->setHost($currentHost)->loadDnsRecords();
         return ($dmarc) ? $dmarc['txt'] : null;
+    }
+    
+    /** DnsQuerifier::getDmarcAnalyzer() */
+    public function getDmarcAnalyzer(){
+        return Analyzer\DmarcAnalyzer::create($this->getDmarcRecord());
+    }
+    
+    /** DnsQuerifier::getSpfAnalyzer() */
+    public function getSpfAnalyzer(){
+        return Analyzer\SpfAnalyzer::create($this->getTxtRecords());
     }
     
     /** DnsQuerifier::getTxtRecords() */
