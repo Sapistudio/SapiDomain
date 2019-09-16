@@ -3,9 +3,7 @@ namespace SapiStudio\Domain;
 use SapiStudio\Domain\Domain as DomainHandler;
 use SapiStudio\Socket\Connection;
 
-/**
- * Whois
- */
+/** Whois  */
 
 class Whois
 {
@@ -13,31 +11,23 @@ class Whois
     protected $whoisResult;
     protected $whoisServerInfo;
     
-    /**
-     * Whois::load()
-     */
+    /** Whois::load()*/
     public static function load($domain){
         return (new static)->query($domain);
     }
     
-    /**
-     * Whois::__construct()
-     */
+    /** Whois::__construct() */
     public function __construct()
     {
         $this->whoisServers = json_decode(file_get_contents(__DIR__.'/config/servers.json'));
     }
     
-    /**
-     * Whois::getWhois()
-     */
+    /** Whois::getWhois() */
     public function getWhois(){
         return $this->whoisResult;
     }
     
-    /**
-     * Whois::parseWhois()
-     */
+    /** Whois::parseWhois() */
     public function parseWhois(){
         $data = explode('>>>',$this->getWhois());
         preg_match_all('/^[a-z A-Z](.*)\b: \b.*$/m', $data[0], $matches);
@@ -61,23 +51,18 @@ class Whois
         return $return;
     }
     
-    /**
-     * Whois::isAvailable()
-     */
+    /** Whois::isAvailable() */
     public function isAvailable(){
         return (strpos($this->whoisResult,$this->whoisServerInfo->not_found) !== false) ? false : true;
-        
     }
     
-    /**
-     * Whois::query()
-     */
+    /** Whois::query() */
     public function query($domain)
     {
         $domain                 = DomainHandler::create($domain);
         $this->whoisServerInfo  = $this->whoisServers->{$domain->getTld()};
         if(!$this->whoisServerInfo){
-            throw new \Exception(sprintf('The TLD "%s" does not exist:'.$domain, $domain->getTld()));
+            throw new \Exception(sprintf('The TLD "%s" does not exist', $domain->getTld()));
         }
         try {
             $connection = Connection::open($this->whoisServerInfo->server, 43);
