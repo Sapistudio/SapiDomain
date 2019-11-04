@@ -34,20 +34,25 @@ class DnsQuerifier
         if(!$rbls)
             $rbls = include('config/rblConfig.php');
         $isIp           = (bool)ip2long($adressToCheck);
-        $rbls           = ($isIp) ? array_keys($rbls['ipBased']) : (array_keys($rbls['domainBased']));
+        $rblsData       = ($isIp) ? $rbls['ipBased'] : $rbls['domainBased'];
+        $rblsUris       = array_keys($rblsData);
         $adressToCheck  = ($isIp) ? self::reverseIp($adressToCheck) : self::sanitizeDomainName($adressToCheck);
         if(!$adressToCheck || !$rbls)
             return false;
         $ipBlacklisted = false;
-        foreach($rbls as $key=>$rblUrl){
+        foreach($rblsUris as $key => $rblUrl){
             $blacklisted    = self::dnsCheck($adressToCheck.'.'.$rblUrl);
             if($blacklisted->getEntries(self::$A)){
+                $listed         = 'listed';
                 $ipBlacklisted  = true;
                 $txtEntry       = $blacklisted->getEntries(self::$TXT,true);
                 $reason         =(isset($txtEntry['entries'])) ? implode("\n",$txtEntry['entries']) : 1;
-            }else
+            }else{
+                $listed         = 'not';
                 $reason         = 0;
-            $results[$rblUrl]   = $reason;
+            }
+            $results['rbls'][$rblsData[$rblUrl]['shortName']]   = $reason;
+            $results[$listed][$rblsData[$rblUrl]['shortName']]   = $reason;
         }
         return ['blacklisted' => (int)$ipBlacklisted, 'results' => $results];
     }
