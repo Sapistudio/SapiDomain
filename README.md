@@ -11,14 +11,16 @@ DnsQuerifier::hostLookup($domainName);
 ```
 ## Check DMARC record
 ```php
-DnsQuerifier::make($domainName)->getDmarcRecord()
+$dmarc = DnsQuerifier::make($domainName)
+$dmarc->getDmarcRecord()
+$dmarc->hasDmarc()
+
 ```
 
 ## Initialize querifier with a custom getter(dig or php)
 ```php
-$querifier = DnsQuerifier::make($domainName,Querifier::GETTER_PHP);//or Querifier::GETTER_DIG
 //load all records
-$querifier->loadDnsRecords();
+$querifier = DnsQuerifier::dnsLoad($domainName,Querifier::GETTER_PHP);//or Querifier::GETTER_DIG
 //get txt entries
 $querifier->getTxtRecords();
 ```
