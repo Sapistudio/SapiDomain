@@ -3,8 +3,6 @@ namespace SapiStudio\Domain\Getter;
 
 interface RecordInterface
 {
-    /**
-     * queryDns()
-     */
+    /**  queryDns() */
     public function queryDns($type);
 }
