@@ -2,27 +2,21 @@
 namespace SapiStudio\Domain\Getter;
 use SapiStudio\Domain\DnsQuerifier;
 
-/**
- * RecordDig
- */
+/** RecordDig*/
  
 class RecordDig extends DnsQuerifier implements RecordInterface
 {
     protected $queryServer  = '';
     CONST DEFAULT_TYPE      = "ANY";
     
-    /**
-     * RecordDig::setQueryServer()
-     */
+    /** RecordDig::setQueryServer() */
     public function setQueryServer(string $nameserver)
     {
         $this->queryServer = $nameserver;
         return $this;
     }
     
-    /**
-     * RecordDig::queryDns()
-     */
+    /** RecordDig::queryDns()*/
     public function queryDns($type)
     {
         $type       = ($type) ? $type : self::DEFAULT_TYPE;
@@ -32,9 +26,7 @@ class RecordDig extends DnsQuerifier implements RecordInterface
         return (!$process->isSuccessful()) ? false : $this->parseDigResource($process->getOutput());
     }
     
-    /**
-     * RecordDig::parseDigResource()
-     */
+    /** RecordDig::parseDigResource()*/
     protected function parseDigResource($digResponse = null)
     {
         $digResponse = explode("\n",$digResponse);
@@ -46,17 +38,13 @@ class RecordDig extends DnsQuerifier implements RecordInterface
         return array_filter($response);
     }
     
-    /**
-     * RecordDig::getSpecificQueryServer()
-     */
+    /** RecordDig::getSpecificQueryServer()*/
     protected function getSpecificQueryServer()
     {
         return ($this->queryServer === '') ? '' : ' @'.escapeshellarg($this->queryServer);
     }
     
-    /**
-     * RecordDig::parseDigLine()
-     */
+    /** RecordDig::parseDigLine()*/
     protected function parseDigLine($digLine = null)
     {
         $digLine = trim(preg_replace('/^(;*)/', '', trim($digLine)));
