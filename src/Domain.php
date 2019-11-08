@@ -1,26 +1,18 @@
 <?php
 namespace SapiStudio\Domain;
 
-/**
- * Domain
- * 
-*/
-
+/** Domain*/
 class Domain
 {
     private $domainName;
     
-    /**
-     * Domain::create()
-     */
+    /** Domain::create() */
     public static function create($domainName = null)
     {
         return new self($domainName);
     }
 
-    /**
-     * Domain::__construct()
-     */
+    /** Domain::__construct()*/
     public function __construct($domainName = null)
     {
         if (null !== $domainName) {
@@ -29,26 +21,20 @@ class Domain
             throw new \Exception('Invalid domain');
     }
 
-    /**
-     * Domain::setDomainName()
-     */
+    /** Domain::setDomainName()*/
     public function setDomainName($domainName)
     {
         $this->domainName = $domainName;
         return $this;
     }
 
-    /**
-     * Domain::getDomainName()
-     */
+    /** Domain::getDomainName()*/
     public function getDomainName()
     {
         return $this->domainName;
     }
 
-    /**
-     * Domain::getTld()
-     */
+    /** Domain::getTld()*/
     public function getTld()
     {
         return preg_replace('/(.*)\.([a-z]+)$/', '$2', $this->domainName);
