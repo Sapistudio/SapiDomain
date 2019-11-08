@@ -14,7 +14,13 @@ DnsQuerifier::hostLookup($domainName);
 $dmarc = DnsQuerifier::make($domainName)
 $dmarc->getDmarcRecord()
 $dmarc->hasDmarc()
+```
 
+## Check SPF record
+```php
+$dmarc = DnsQuerifier::make($domainName)
+$dmarc->getSpfRecord()
+$dmarc->hasSpf()
 ```
 
 ## Initialize querifier with a custom getter(dig or php)
