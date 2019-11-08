@@ -41,7 +41,7 @@ class DnsQuerifier
             return false;
         $ipBlacklisted = false;
         foreach($rblsUris as $key => $rblUrl){
-            $blacklisted    = self::dnsCheck($adressToCheck.'.'.$rblUrl);
+            $blacklisted    = self::dnsLoad($adressToCheck.'.'.$rblUrl);
             if($blacklisted->getEntries(self::$A)){
                 $listed         = 'listed';
                 $ipBlacklisted  = true;
@@ -57,8 +57,14 @@ class DnsQuerifier
         return ['blacklisted' => (int)$ipBlacklisted, 'results' => $results];
     }
     
-    /** DnsQuerifier::dnsCheck()  */
-    public static function dnsCheck($host,$getterRecord = null)
+    /** DnsQuerifier::hostLookup()  */
+    public static function hostLookup($host,$getterRecord = null)
+    {
+        return self::dnsLoad($host,$getterRecord)->getAllRecords();
+    }
+    
+    /** DnsQuerifier::dnsLoad()  */
+    public static function dnsLoad($host,$getterRecord = null)
     {
         return self::make($host,$getterRecord)->loadDnsRecords();
     }
@@ -210,27 +216,27 @@ class DnsQuerifier
     
     /** DnsQuerifier::summary() */
     public function summary(){
-        $summary    = [];
+        $returnData                             = [];
         if($this->getEntries(self::$A))
-            $summary['entries'][self::$A] = array_column($this->getEntries(self::$A),'ip');
+            $returnData['entries'][self::$A]    = array_column($this->getEntries(self::$A),'ip');
         if($this->getEntries(self::$NS))
-            $summary['entries'][self::$NS] = array_column($this->getEntries(self::$NS),'target');
+            $returnData['entries'][self::$NS]   = array_column($this->getEntries(self::$NS),'target');
         if($this->getEntries(self::$TXT))
-            $summary['entries'][self::$TXT] = array_column($this->getEntries(self::$TXT),'txt');
+            $returnData['entries'][self::$TXT]  = array_column($this->getEntries(self::$TXT),'txt');
         foreach($this->getEntries(self::$AAAA) as $entryKey=>$entryData){
             $ip = (isset($entryData['ip6'])) ? $entryData['ip6'] : $entryData['ipv6'];
-            $summary['entries'][self::$AAAA][] = $entryData['host'].' - '.$ip;
+            $returnData['entries'][self::$AAAA][] = $entryData['host'].' - '.$ip;
         }
         foreach($this->getEntries(self::$SOA) as $entryKey=>$entryData)
-            $summary['entries'][self::$SOA][] = 'Ttl:'.$entryData['ttl'].' - '.$entryData['rname'];
+            $returnData['entries'][self::$SOA][]    = 'Ttl:'.$entryData['ttl'].' - '.$entryData['rname'];
         foreach($this->getEntries(self::$MX) as $entryKey=>$entryData)
-            $summary['entries'][self::$MX][] = $entryData['target'].' - '.$entryData['ttl'];
-        $summary['hasSpf'] = $this->hasSpf();
-        $summary['hasDmarc'] = $this->hasDmarc();
-        $whois = Whois::load($this->hostname);
-        $summary['whois'] = str_replace(["\n","\r",'"'],['<br>',"",""],$whois->getWhois());
-        $summary['isRegistered'] = $whois->isAvailable();
-        return $summary;
+            $returnData['entries'][self::$MX][]     = $entryData['target'].' - '.$entryData['ttl'];
+        $returnData['hasSpf']                       = $this->hasSpf();
+        $returnData['hasDmarc']                     = $this->hasDmarc();
+        $whois                                      = Whois::load($this->hostname);
+        $returnData['whois']                        = str_replace(["\n","\r",'"'],['<br>',"",""],$whois->getWhois());
+        $returnData['isRegistered']                 = $whois->isAvailable();
+        return $returnData;
     }
     
     /** DnsQuerifier::reverseIp() */
