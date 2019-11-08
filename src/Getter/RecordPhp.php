@@ -2,14 +2,7 @@
 namespace SapiStudio\Domain\Getter;
 use SapiStudio\Domain\DnsQuerifier;
 
-/**
- * RecordPhp
- * 
- * @package 
- * @copyright 2017
- * @version $Id$
- * @access public
- */
+/** RecordPhp*/
 
 class RecordPhp extends DnsQuerifier implements RecordInterface
 {
@@ -27,9 +20,7 @@ class RecordPhp extends DnsQuerifier implements RecordInterface
     ];
     CONST DEFAULT_TYPE          = DNS_ANY;
     
-    /**
-     * RecordPhp::queryDns()
-     */
+    /** RecordPhp::queryDns()*/
     public function queryDns($type)
     {
         return dns_get_record($this->hostname,(isset(self::$QUERY_TYPES[$type])) ? self::$QUERY_TYPES[$type] : self::DEFAULT_TYPE);
