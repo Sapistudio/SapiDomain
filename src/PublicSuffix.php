@@ -1,17 +1,13 @@
 <?php
 namespace SapiStudio\Domain;
 
-/**
- * PublicSuffix
- */
+/** PublicSuffix*/
 
 class PublicSuffix
 {
     const PUBLIC_URL = 'https://raw.githubusercontent.com/publicsuffix/list/master/public_suffix_list.dat';
     
-    /**
-     * PublicSuffix::getTlds()
-     */
+    /** PublicSuffix::getTlds()*/
     public static function getTlds()
     {
         $list = @fopen(self::PUBLIC_URL,'r');
