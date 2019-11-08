@@ -2,10 +2,7 @@
 namespace SapiStudio\Domain\Analyzer;
 use Illuminate\Support\Collection;
 
-/**
- * DmarcAnalyzer
- * 
- */
+/** DmarcAnalyzer*/
 
 class DmarcAnalyzer
 {
@@ -14,9 +11,7 @@ class DmarcAnalyzer
     protected $dmarcTags        = [];
     protected $validDmarcLine   = false;
     
-    /**
-     * DmarcAnalyzer::create()
-     */
+    /** DmarcAnalyzer::create() */
     public static function create($dmarcLine = null)
     {
         return new static($dmarcLine);
