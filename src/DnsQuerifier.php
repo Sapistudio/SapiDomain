@@ -233,10 +233,16 @@ class DnsQuerifier
             $returnData['entries'][self::$MX][]     = $entryData['target'].' - '.$entryData['ttl'];
         $returnData['hasSpf']                       = $this->hasSpf();
         $returnData['hasDmarc']                     = $this->hasDmarc();
-        $whois                                      = Whois::load($this->hostname);
+        $whois                                      = $this->loadWhois();
         $returnData['whois']                        = str_replace(["\n","\r",'"'],['<br>',"",""],$whois->getWhois());
-        $returnData['isRegistered']                 = $whois->isAvailable();
+        $returnData['isRegistered']                 = $whois->isRegistered();
+        $returnData['expirationDate']               = $whois->getExpirationDate();
         return $returnData;
+    }
+    
+    /** DnsQuerifier::loadWhois() */
+    public function loadWhois(){
+        return Whois::load($this->hostname);
     }
     
     /** DnsQuerifier::reverseIp() */
