@@ -4,8 +4,8 @@
     "license": "MIT",
     "require": {
         "php": ">=5.6",
-        "sapistudio/socket": "^2.0",
-         "illuminate/support": "5.4.*"
+        "io-developer/php-whois": "^3.4",
+        "illuminate/support": "5.4.*"
     },
     "autoload": {
          "psr-4": { "SapiStudio\\Domain\\": "src/" }
