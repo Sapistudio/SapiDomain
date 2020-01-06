@@ -1,15 +1,17 @@
 <?php
 namespace SapiStudio\Domain;
 use SapiStudio\Domain\Domain as DomainHandler;
-use SapiStudio\Socket\Connection;
-
+use Iodev\Whois\Exceptions\ConnectionException;
+use Iodev\Whois\Exceptions\ServerMismatchException;
+use Iodev\Whois\Exceptions\WhoisException;
 /** Whois  */
 
 class Whois
 {
-    private $whoisServers;
-    protected $whoisResult;
-    protected $whoisServerInfo;
+    private $whoisQuery         = null;
+    private $whoisResult        = null;
+    private $domainInfo         = null;
+    private $domainIsAvailable  = false;
     
     /** Whois::load()*/
     public static function load($domain){
@@ -19,60 +21,36 @@ class Whois
     /** Whois::__construct() */
     public function __construct()
     {
-        $this->whoisServers = json_decode(file_get_contents(__DIR__.'/config/servers.json'));
+        $this->whoisQuery = \Iodev\Whois\Whois::create();
     }
     
     /** Whois::getWhois() */
     public function getWhois(){
-        return $this->whoisResult;
+        return ($this->domainInfo->getResponse()) ? $this->domainInfo->getResponse()->getText() : false;
     }
     
-    /** Whois::parseWhois() */
-    public function parseWhois(){
-        $data = explode('>>>',$this->getWhois());
-        preg_match_all('/^[a-z A-Z](.*)\b: \b.*$/m', $data[0], $matches);
-        if($matches[0]){
-            foreach($matches[0] as $index=>$line){
-                list($argument,$value) = explode(': ',trim(strtolower($line)));
-                $argument = explode(' ',$argument);
-                $option = array_shift($argument);
-                if(count($argument) > 3)
-                    continue;
-                if(isset($return[$option][implode('',$argument)])){
-                    if(is_array($return[$option][implode('',$argument)])){
-                        $return[$option][implode('',$argument)][] = $value;
-                    }else{
-                        $return[$option][implode('',$argument)] = [$return[$option][implode('',$argument)],$value];
-                    }
-                }else
-                    $return[$option][implode('',$argument)] = $value;
-            }
-        }
-        return $return;
+    /** Whois::isRegistered() */
+    public function isRegistered(){
+        return ($this->domainIsAvailable) ? false : true;
     }
     
-    /** Whois::isAvailable() */
-    public function isAvailable(){
-        return (strpos($this->whoisResult,$this->whoisServerInfo->not_found) !== false) ? false : true;
+    /** Whois::getExpirationDate() */
+    public function getExpirationDate(){
+        return ($this->domainInfo) ? date("Y-m-d", $this->domainInfo->getExpirationDate()) : false;
     }
     
     /** Whois::query() */
     public function query($domain)
     {
-        $domain                 = DomainHandler::create($domain);
-        $this->whoisServerInfo  = $this->whoisServers->{$domain->getTld()};
-        if(!$this->whoisServerInfo){
-            throw new \Exception(sprintf('The TLD "%s" does not exist', $domain->getTld()));
-        }
         try {
-            $connection = Connection::open($this->whoisServerInfo->server, 43);
-            $this->whoisResult = $connection->sendMessage($domain->getDomainName());
-            $connection->close();
-        } catch (\Exception $e) {
-            throw new \Exception(sprintf('Could not query WHOIS for "%s".', $domain->getDomainName()), 0, $e);
-        }
-        if (0 === strlen(trim($this->whoisResult))) {
-            throw new \Exception(sprintf('Retrieved empty WHOIS for "%s".', $domain->getDomainName()));
+            $this->domainIsAvailable    = $this->whoisQuery->isDomainAvailable($domain);
+            $this->domainInfo           = $this->whoisQuery->loadDomainInfo($domain);
+        } catch (ConnectionException $e) {
+            throw new \Exception('Disconnect or connection timeout');
+        } catch (ServerMismatchException $e) {
+            throw new \Exception("TLD server not found in current server hosts:".$domain);
+        } catch (WhoisException $e) {
+            throw new \Exception("Whois server responded with error '{$e->getMessage()}'");
         }
         return $this;
     }
