@@ -1,6 +1,7 @@
 <?php
 namespace SapiStudio\Domain;
 use SapiStudio\Domain\Domain as DomainHandler;
+use SapiStudio\Socket\Connection;
 use Iodev\Whois\Exceptions\ConnectionException;
 use Iodev\Whois\Exceptions\ServerMismatchException;
 use Iodev\Whois\Exceptions\WhoisException;
@@ -26,7 +27,7 @@ class Whois
     
     /** Whois::getWhois() */
     public function getWhois(){
-        return ($this->domainInfo->getResponse()) ? $this->domainInfo->getResponse()->getText() : false;
+        return ($this->domainInfo) ? $this->domainInfo->getResponse()->getText() : false;
     }
     
     /** Whois::isRegistered() */
