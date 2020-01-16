@@ -47,7 +47,7 @@ class Whois
             $this->domainIsAvailable    = $this->whoisQuery->isDomainAvailable($domain);
             $this->domainInfo           = $this->whoisQuery->loadDomainInfo($domain);
         } catch (ConnectionException $e) {
-            throw new \Exception('Disconnect or connection timeout');
+            throw new \Exception('Connection error:'.$e->getMessage());
         } catch (ServerMismatchException $e) {
             throw new \Exception("TLD server not found in current server hosts:".$domain);
         } catch (WhoisException $e) {
