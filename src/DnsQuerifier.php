@@ -233,10 +233,16 @@ class DnsQuerifier
             $returnData['entries'][self::$MX][]     = $entryData['target'].' - '.$entryData['ttl'];
         $returnData['hasSpf']                       = $this->hasSpf();
         $returnData['hasDmarc']                     = $this->hasDmarc();
-        $whois                                      = $this->loadWhois();
-        $returnData['whois']                        = str_replace(["\n","\r",'"'],['<br>',"",""],$whois->getWhois());
-        $returnData['isRegistered']                 = $whois->isRegistered();
-        $returnData['expirationDate']               = $whois->getExpirationDate();
+        try {
+            $whois                                  = $this->loadWhois();
+            $returnData['whois']                    = str_replace(["\n","\r",'"'],['<br>',"",""],$whois->getWhois());
+            $returnData['isRegistered']             = $whois->isRegistered();
+            $returnData['expirationDate']           = $whois->getExpirationDate();
+        }catch(\Exception $e){
+            $returnData['whois']                    = $e->getMessage();
+            $returnData['isRegistered']             = false;
+            $returnData['expirationDate']           = '1970-01-01';
+        }
         return $returnData;
     }
     
