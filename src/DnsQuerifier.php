@@ -201,7 +201,7 @@ class DnsQuerifier
         if(!$this->hostname)
             throw new \InvalidArgumentException('A domain name is required');
         $dnsRecordTypes         = ($type) ? [$type] : array_keys($this->dnsRecordTypes);
-        
+        $this->rawDnsRecords    = [];
         foreach($dnsRecordTypes as $dnstype){
             $this->rawDnsRecords    = array_merge($this->rawDnsRecords,$this->queryDns(strtoupper($dnstype)));
         }
