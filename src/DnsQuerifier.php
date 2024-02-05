@@ -60,7 +60,7 @@ class DnsQuerifier
             return false;
         $ipBlacklisted = false;
         foreach($rblsUris as $key => $rblUrl){
-            $blacklisted    = (new Dig($adressToCheck.'.'.$rblUrl))->setQueryServer($blacklist_dns_server)->loadDnsRecords(self::$TXT);
+            $blacklisted    = (new Dig($adressToCheck.'.'.$rblUrl))->setQueryServer($blacklist_dns_server)->loadDnsRecords([self::$TXT,self::$A]);
             if($blacklisted->getEntries(self::$A)){
                 $listed         = 'listed';
                 $ipBlacklisted  = true;
@@ -200,7 +200,7 @@ class DnsQuerifier
     {
         if(!$this->hostname)
             throw new \InvalidArgumentException('A domain name is required');
-        $dnsRecordTypes         = ($type) ? [$type] : array_keys($this->dnsRecordTypes);
+        $dnsRecordTypes         = ($type) ? (!is_array($type)) ? [$type] : $type : array_keys($this->dnsRecordTypes);
         $this->rawDnsRecords    = [];
         foreach($dnsRecordTypes as $dnstype){
             $this->rawDnsRecords    = array_merge($this->rawDnsRecords,$this->queryDns(strtoupper($dnstype)));
