@@ -13,7 +13,7 @@ class SpfAnalyzer
     protected $spfErrors            = [];
     private $allowedIPs             = [];
     private $checkIncludeIps        = false;
-    
+    private $spfPolicy              = false;
     // Constants defining SPF check results and mechanisms.
     const SPF_RESULT_PASS           = 'Spf valid';
     const SPF_RESULT_FAIL           = 'Spf fail';
@@ -74,6 +74,7 @@ class SpfAnalyzer
         return (object)[
             'isValid'       => $this->spfIsValid(),
             'spfErrors'     => $this->spfErrors,
+            'spfPolicy'     => $this->spfPolicy,
             'allowedIPs'    => $this->allowedIPs,
             'spfRecord'     => $this->spfRecordEntry
         ];
@@ -136,10 +137,8 @@ class SpfAnalyzer
             $this->handleInclude(substr($part, 8));
         } elseif (strpos($part, self::MECHANISM_IP4) === 0 || strpos($part, self::MECHANISM_IP6) === 0) {
             $this->allowedIPs[] = substr($part, 4);
-        } elseif (strpos($part, self::MECHANISM_A) === 0) {
-            //$this->handleA($part);
-        } elseif (strpos($part, self::MECHANISM_MX) === 0) {
-            //$this->handleMX($part);
+        } elseif (strpos($part, self::MECHANISM_ALL) !== false) {
+            $this->handleAllMechanism($part);
         }
     }
     
@@ -156,31 +155,13 @@ class SpfAnalyzer
         $this->allowedIPs = array_merge($this->allowedIPs, $result->allowedIPs);
     }
     
-    private function handleA($part) {
-        $domainToCheck = $this->domain;
-        // Check if the 'a' mechanism specifies a domain
-        if (strpos($part, ':') !== false) {
-            list(, $domainToCheck) = explode(':', $part, 2);
-        }
-        // Resolve A and AAAA records for the domain
-        $this->resolveAndCollectIPs($domainToCheck, ['A', 'AAAA']);
-    }
-    
-    private function handleMX($part) {
-        $domainToCheck = $this->domain;
-        // Check if the 'mx' mechanism specifies a domain
-        if (strpos($part, ':') !== false) {
-            list(, $domainToCheck) = explode(':', $part, 2);
-        }
-    
-        // Resolve MX records, then resolve A and AAAA records for each MX entry
-        $mxRecords = dns_get_record($domainToCheck, DNS_MX);
-        if ($mxRecords === false) {
-            $this->spfErrors[] = "Failed to resolve MX records for $domainToCheck";
-            return;
-        }
-        foreach ($mxRecords as $mxRecord) {
-            $this->resolveAndCollectIPs($mxRecord['target'], ['A', 'AAAA']);
+    private function handleAllMechanism($part) {
+        if ($part === '-all') {
+            $this->spfPolicy = 'strict'; // Hard fail policy
+        } elseif ($part === '~all') {
+            $this->spfPolicy = 'neutral'; // Soft fail policy
+        } elseif ($part === '?all') {
+            $this->spfPolicy = 'none'; // Neutral policy
         }
     }
     
