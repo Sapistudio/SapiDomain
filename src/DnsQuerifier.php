@@ -9,12 +9,13 @@ use SapiStudio\Domain\Getter\RecordPhp as Php;
  
 class DnsQuerifier
 {
-    const GETTER_PHP        = 'php';	
-    const GETTER_DIG        = 'dig';
-    
+    const GETTER_PHP            = 'php';	
+    const GETTER_DIG            = 'dig';
+    //const BLACKLIST_DNS_SERVER  = '185.228.168.9';//cleanbrowsing
+    const BLACKLIST_DNS_SERVER  = '185.228.168.168';//cleanbrowsing
     protected $hostname;
-    protected $rawDnsRecords= [];
-    protected $dnsRecords   = null;
+    protected $rawDnsRecords    = [];
+    protected $dnsRecords       = null;
     
     public static $A        = 'A';
     public static $CNAME    = "CNAME";
@@ -29,7 +30,7 @@ class DnsQuerifier
     const DMARC_DNS_ADDRES  = '_dmarc.';
     
     /** DnsQuerifier::blacklistLookup() */
-    public static function blacklistLookup($adressToCheck = null,$rbls = [])
+    public static function blacklistLookup($adressToCheck = null,$rbls = [],$blacklist_dns_server = self::BLACKLIST_DNS_SERVER)
     {
         if(!$rbls)
             $rbls = include('config/rblConfig.php');
@@ -41,7 +42,7 @@ class DnsQuerifier
             return false;
         $ipBlacklisted = false;
         foreach($rblsUris as $key => $rblUrl){
-            $blacklisted    = self::dnsLoad($adressToCheck.'.'.$rblUrl);
+            $blacklisted    = (new Dig($adressToCheck.'.'.$rblUrl))->setQueryServer($blacklist_dns_server)->loadDnsRecords();
             if($blacklisted->getEntries(self::$A)){
                 $listed         = 'listed';
                 $ipBlacklisted  = true;
@@ -54,7 +55,7 @@ class DnsQuerifier
             $results['rbls'][$rblsData[$rblUrl]['shortName']]   = $reason;
             $results[$listed][$rblsData[$rblUrl]['shortName']]   = $reason;
         }
-        return ['blacklisted' => (int)$ipBlacklisted, 'results' => $results];
+        return ['blacklisted' => (int)$ipBlacklisted, 'ip_checked' => $adressToCheck,'dns_server_used' => $blacklist_dns_server,'results' => $results];
     }
     
     /** DnsQuerifier::hostLookup()  */
@@ -96,13 +97,7 @@ class DnsQuerifier
     
     /**  DnsQuerifier::hasSpf)*/
     public function hasSpf(){
-        return ($this->getSpfRecord()) ? true : false;
-    }
-    
-    
-    /** DnsQuerifier::getSpfRecord() */
-    public function getSpfRecord(){
-        return $this->getSpfAnalyzer()->getSpf();
+        return $this->getSpfAnalyzer()->getSpfResult();
     }
     
     /** DnsQuerifier::getDmarcRecord()*/
@@ -231,17 +226,20 @@ class DnsQuerifier
             $returnData['entries'][self::$SOA][]    = 'Ttl:'.$entryData['ttl'].' - '.$entryData['rname'];
         foreach($this->getEntries(self::$MX) as $entryKey=>$entryData)
             $returnData['entries'][self::$MX][]     = $entryData['target'].' - '.$entryData['ttl'];
-        $returnData['hasSpf']                       = $this->hasSpf();
+        $spfresults                                 = $this->hasSpf();
+        $returnData['hasSpf']                       = $spfresults->isValid;
+        if($spfresults->isValid)
+            $returnData['spf_data']                 = $spfresults;
         $returnData['hasDmarc']                     = $this->hasDmarc();
         try {
             $whois                                  = $this->loadWhois();
             $returnData['whois']                    = str_replace(["\n","\r",'"'],['<br>',"",""],$whois->getWhois());
             $returnData['isRegistered']             = $whois->isRegistered();
             $returnData['expirationDate']           = $whois->getExpirationDate();
+            $returnData['domOwner']                 = strtolower(trim($whois->getOwner()));
+            $returnData['domRegistrar']             = strtolower(trim($whois->getRegistrar()));
         }catch(\Exception $e){
-            $returnData['whois']                    = $e->getMessage();
-            $returnData['isRegistered']             = false;
-            $returnData['expirationDate']           = '1970-01-01';
+            throw new \Exception("Whois error : '{$e->getMessage()}'");
         }
         return $returnData;
     }
