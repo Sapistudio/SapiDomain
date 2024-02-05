@@ -35,9 +35,13 @@ class DmarcAnalyzer
         $this->parseDmarcLine();
     }
     
-    /** DmarcAnalyzer::getDetailDmARC() */
-    public function getDetailDmARC(){
-        return ($this->dmarcIsValid()) ? $this->dmarcLineDetailed :  false;
+    /** DmarcAnalyzer::getDmarcResult() */
+    public function getDmarcResult(){
+        return (object)[
+            'isValid'       => $this->dmarcIsValid(),
+            'dmarcLine'     => $this->getDmarcLine(),
+            'dmarcDetails'  => $this->dmarcLineDetailed
+        ];
     }
     
     /**  DmarcAnalyzer::loadDmarcTags() */
