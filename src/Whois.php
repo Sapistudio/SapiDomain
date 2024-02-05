@@ -40,6 +40,16 @@ class Whois
         return ($this->domainInfo) ? date("Y-m-d", $this->domainInfo->getExpirationDate()) : false;
     }
     
+    /** Whois::getOwner() */
+    public function getOwner(){
+        return ($this->domainInfo) ? $this->domainInfo->getOwner() : false;
+    }
+    
+    /** Whois::getRegistrar() */
+    public function getRegistrar(){
+        return ($this->domainInfo) ? $this->domainInfo->getRegistrar() : false;
+    }
+    
     /** Whois::query() */
     public function query($domain)
     {
