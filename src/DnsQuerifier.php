@@ -218,14 +218,21 @@ class DnsQuerifier
             $returnData['entries'][self::$NS]   = array_column($this->getEntries(self::$NS),'target');
         if($this->getEntries(self::$TXT))
             $returnData['entries'][self::$TXT]  = array_column($this->getEntries(self::$TXT),'txt');
-        foreach($this->getEntries(self::$AAAA) as $entryKey=>$entryData){
-            $ip = (isset($entryData['ip6'])) ? $entryData['ip6'] : $entryData['ipv6'];
-            $returnData['entries'][self::$AAAA][] = $entryData['host'].' - '.$ip;
+        if($this->getEntries(self::$AAAA)){
+            foreach($this->getEntries(self::$AAAA) as $entryKey=>$entryData){
+                $ip = (isset($entryData['ip6'])) ? $entryData['ip6'] : $entryData['ipv6'];
+                $returnData['entries'][self::$AAAA][] = $entryData['host'].' - '.$ip;
+            }
         }
-        foreach($this->getEntries(self::$SOA) as $entryKey=>$entryData)
-            $returnData['entries'][self::$SOA][]    = 'Ttl:'.$entryData['ttl'].' - '.$entryData['rname'];
-        foreach($this->getEntries(self::$MX) as $entryKey=>$entryData)
-            $returnData['entries'][self::$MX][]     = $entryData['target'].' - '.$entryData['ttl'];
+        if($this->getEntries(self::$SOA)){
+            foreach($this->getEntries(self::$SOA) as $entryKey=>$entryData)
+                $returnData['entries'][self::$SOA][]    = 'Ttl:'.$entryData['ttl'].' - '.$entryData['rname'];
+        }
+        if($this->getEntries(self::$MX)){
+            foreach($this->getEntries(self::$MX) as $entryKey=>$entryData)
+                $returnData['entries'][self::$MX][]     = $entryData['target'].' - '.$entryData['ttl'];
+        }
+        
         $spfresults                                 = $this->hasSpf();
         $dmarcResults                               = $this->hasDmarc();
         $returnData['hasSpf']                       = $spfresults->isValid;
