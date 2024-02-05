@@ -50,6 +50,18 @@ return[
        "multi.surbl.org" => [
             "name"      => "surbl",
             "shortName" => "surbl",
+       ],
+       "dnsbl.sorbs.net" => [
+            "name"      => "sorbs",
+            "shortName" => "SORBS",
+       ],
+       "psbl.surriel.com" => [
+            "name"      => "surriel",
+            "shortName" => "SURRIEL",
+       ],
+       "dnsbl-1.uceprotect.net" => [
+            "name"      => "uceprotect",
+            "shortName" => "UCEPROTECT",
        ]
     ],
     "domainBased" => [
@@ -58,8 +70,12 @@ return[
             "shortName" => "DBL",
        ],
        "multi.surbl.org" => [
-            "name"      => "SURBL",
-            "shortName" => "SURBL",
+            "name"      => "M_SURBL",
+            "shortName" => "M_SURBL",
+       ],
+       "dbl.surbl.org" => [
+            "name"      => "D_SURBL",
+            "shortName" => "D_SURBL",
        ]
     ]
   ];
