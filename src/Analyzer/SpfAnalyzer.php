@@ -12,6 +12,7 @@ class SpfAnalyzer
     protected $spfRecordEntry       = null;
     protected $spfErrors            = [];
     private $allowedIPs             = [];
+    private $checkIncludeIps        = false;
     
     // Constants defining SPF check results and mechanisms.
     const SPF_RESULT_PASS           = 'Spf valid';
@@ -59,6 +60,11 @@ class SpfAnalyzer
         $this->parseSpf();
     }
     
+    
+    public function setToCheckIncludeIps(){
+        $this->checkIncludeIps = true;
+        return $this;
+    }
     /**
      * Gets the SPF analysis result.
      * 
@@ -126,14 +132,14 @@ class SpfAnalyzer
      */
     private function handlePart($part) {
         $part = trim(str_replace("+","",$part));
-        if (strpos($part, self::MECHANISM_INCLUDE) === 0) {
-            $this->handleInclude(substr($part, 8), $errors);
+        if (strpos($part, self::MECHANISM_INCLUDE) === 0 && $this->checkIncludeIps) {
+            $this->handleInclude(substr($part, 8));
         } elseif (strpos($part, self::MECHANISM_IP4) === 0 || strpos($part, self::MECHANISM_IP6) === 0) {
             $this->allowedIPs[] = substr($part, 4);
         } elseif (strpos($part, self::MECHANISM_A) === 0) {
-            $this->handleA($part, $errors);
+            //$this->handleA($part);
         } elseif (strpos($part, self::MECHANISM_MX) === 0) {
-            $this->handleMX($part, $errors);
+            //$this->handleMX($part);
         }
     }
     
@@ -150,7 +156,7 @@ class SpfAnalyzer
         $this->allowedIPs = array_merge($this->allowedIPs, $result->allowedIPs);
     }
     
-    private function handleA($part, &$errors) {
+    private function handleA($part) {
         $domainToCheck = $this->domain;
         // Check if the 'a' mechanism specifies a domain
         if (strpos($part, ':') !== false) {
