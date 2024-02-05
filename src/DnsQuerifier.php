@@ -27,6 +27,24 @@ class DnsQuerifier
     public static $TXT      = "TXT";
     public static $AAAA     = "AAAA";
     public static $ANY      = "ANY";
+    protected $dnsRecordTypes = [
+        'A' => 'Address record', // Maps a domain to an IPv4 address.
+        'AAAA' => 'IPv6 address record', // Maps a domain to an IPv6 address.
+        'CNAME' => 'Canonical name record', // Alias of one name to another.
+        'NS' => 'Name server record', // Delegates a DNS zone to use the given authoritative name servers.
+        'MX' => 'Mail exchange record', // Maps a domain name to a list of message transfer agents for that domain.
+        'TXT' => 'Text record', // Originally for arbitrary human-readable text in a DNS record.
+        'SOA' => 'Start of [a zone of] authority record', // Specifies authoritative information about a DNS zone.
+        'PTR' => 'Pointer record', // Maps an IPv4 address to the canonical name for that host.
+        //'SRV' => 'Service locator', // Generalized service location record.
+        //'SPF' => 'Sender Policy Framework', // Used for email authentication.
+        'CAA' => 'Certification Authority Authorization', // Specifies which CAs are allowed to issue certificates for a domain.
+        //'DNSKEY' => 'DNS Key record', // Contains the public signing key of a DNS zone.
+        //'DS' => 'Delegation Signer', // Used in DNSSEC. Points to a DNSKEY record in a delegated zone.
+        //'NSEC' => 'Next Secure record', // Part of DNSSEC—used to prove a name does not exist.
+        //'NSEC3' => 'Next Secure record version 3', // Part of DNSSEC, an alternative to NSEC.
+        //'RRSIG' => 'DNSSEC signature', // Contains a signature for a DNSSEC-secured record set.
+    ];
     const DMARC_DNS_ADDRES  = '_dmarc.';
     
     /** DnsQuerifier::blacklistLookup() */
@@ -42,7 +60,7 @@ class DnsQuerifier
             return false;
         $ipBlacklisted = false;
         foreach($rblsUris as $key => $rblUrl){
-            $blacklisted    = (new Dig($adressToCheck.'.'.$rblUrl))->setQueryServer($blacklist_dns_server)->loadDnsRecords();
+            $blacklisted    = (new Dig($adressToCheck.'.'.$rblUrl))->setQueryServer($blacklist_dns_server)->loadDnsRecords(self::$TXT);
             if($blacklisted->getEntries(self::$A)){
                 $listed         = 'listed';
                 $ipBlacklisted  = true;
@@ -182,7 +200,11 @@ class DnsQuerifier
     {
         if(!$this->hostname)
             throw new \InvalidArgumentException('A domain name is required');
-        $this->rawDnsRecords    = $this->queryDns(strtoupper($type));
+        $dnsRecordTypes         = ($type) ? [$type] : array_keys($this->dnsRecordTypes);
+        
+        foreach($dnsRecordTypes as $dnstype){
+            $this->rawDnsRecords    = array_merge($this->rawDnsRecords,$this->queryDns(strtoupper($dnstype)));
+        }
         $this->dnsRecords       = Collection::make($this->sortRecords());
         return $this;
     }
