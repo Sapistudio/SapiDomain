@@ -92,7 +92,7 @@ class DnsQuerifier
     
     /** DnsQuerifier::hasDmarc()  */
     public function hasDmarc(){
-        return (int) $this->getDmarcAnalyzer()->dmarcIsValid();
+        return $this->getDmarcAnalyzer()->getDmarcResult();
     }
     
     /**  DnsQuerifier::hasSpf)*/
@@ -227,10 +227,13 @@ class DnsQuerifier
         foreach($this->getEntries(self::$MX) as $entryKey=>$entryData)
             $returnData['entries'][self::$MX][]     = $entryData['target'].' - '.$entryData['ttl'];
         $spfresults                                 = $this->hasSpf();
+        $dmarcResults                               = $this->hasDmarc();
         $returnData['hasSpf']                       = $spfresults->isValid;
         if($spfresults->isValid)
             $returnData['spf_data']                 = $spfresults;
-        $returnData['hasDmarc']                     = $this->hasDmarc();
+        $returnData['hasDmarc']                     = $dmarcResults->isValid;
+        if($dmarcResults->isValid)
+            $returnData['dmarc_data']               = $dmarcResults;
         try {
             $whois                                  = $this->loadWhois();
             $returnData['whois']                    = str_replace(["\n","\r",'"'],['<br>',"",""],$whois->getWhois());
