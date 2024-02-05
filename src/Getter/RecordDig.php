@@ -10,7 +10,7 @@ class RecordDig extends DnsQuerifier implements RecordInterface
     CONST DEFAULT_TYPE      = "ANY";
     
     /** RecordDig::setQueryServer() */
-    public function setQueryServer(string $nameserver)
+    public function setQueryServer($nameserver = '')
     {
         $this->queryServer = $nameserver;
         return $this;
