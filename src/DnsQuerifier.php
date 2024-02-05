@@ -238,6 +238,7 @@ class DnsQuerifier
         if($spfresults->isValid)
             $returnData['spf_data']                 = $spfresults;
         $returnData['hasDmarc']                     = $dmarcResults->isValid;
+        $returnData['dnsIps']                       = $this->dnsIps();
         if($dmarcResults->isValid)
             $returnData['dmarc_data']               = $dmarcResults;
         try {
