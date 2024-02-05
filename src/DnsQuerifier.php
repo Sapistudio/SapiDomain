@@ -232,7 +232,6 @@ class DnsQuerifier
             foreach($this->getEntries(self::$MX) as $entryKey=>$entryData)
                 $returnData['entries'][self::$MX][]     = $entryData['target'].' - '.$entryData['ttl'];
         }
-        
         $spfresults                                 = $this->hasSpf();
         $dmarcResults                               = $this->hasDmarc();
         $returnData['hasSpf']                       = $spfresults->isValid;
