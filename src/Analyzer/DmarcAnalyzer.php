@@ -6,10 +6,11 @@ use Illuminate\Support\Collection;
 
 class DmarcAnalyzer
 {
-    protected $dmarcLine        = null;
-    protected $dmarcLineParsed  = [];
-    protected $dmarcTags        = [];
-    protected $validDmarcLine   = false;
+    protected $dmarcLine            = null;
+    protected $dmarcLineParsed      = [];
+    protected $dmarcLineDetailed    = [];
+    protected $dmarcTags            = [];
+    protected $validDmarcLine       = false;
     
     /** DmarcAnalyzer::create() */
     public static function create($dmarcLine = null)
@@ -23,9 +24,20 @@ class DmarcAnalyzer
         $this->setDmarcLine($dmarcLine);
     }
     
-    /** DmarcAnalyzer::getDmarcPolicy() */
-    public function getDmarcPolicy(){
-        return $this->dmarcLineParsed->get('p','none');
+    /** DmarcAnalyzer::getDmarcLine() */
+    public function getDmarcLine(){
+        return $this->dmarcLine;
+    }
+    
+    /** DmarcAnalyzer::setDmarcLine()*/
+    public function setDmarcLine($dmarcLine){
+        $this->dmarcLine = $dmarcLine;
+        $this->parseDmarcLine();
+    }
+    
+    /** DmarcAnalyzer::getDetailDmARC() */
+    public function getDetailDmARC(){
+        return ($this->dmarcIsValid()) ? $this->dmarcLineDetailed :  false;
     }
     
     /**  DmarcAnalyzer::loadDmarcTags() */
@@ -39,28 +51,19 @@ class DmarcAnalyzer
     }
     
     /** DmarcAnalyzer::parseDmarcLine() */
-    public function parseDmarcLine(){
+    protected function parseDmarcLine(){
         if($this->dmarcLine && preg_match("/^v=dmarc(.*)/i", $this->dmarcLine)){
-            $result     = [];
+            $result = $detailed_result = [];
             $dmarcLine  = array_filter(array_map("trim",explode(';',$this->dmarcLine)));
-            array_walk($dmarcLine, function($value,$key) use (&$result){
+            array_walk($dmarcLine, function($value,$key) use (&$result,&$detailed_result){
                 list($tag,$tagvalue) = explode("=", $value);
                 $result[$tag] = $tagvalue;
+                $detailed_result[$tag] = ['description' => $this->dmarcTags[$tag]['description'],'value' => $tagvalue];
             });
-            $this->dmarcLineParsed  = Collection::make($result);
-            $this->validDmarcLine   = true;
+            $this->dmarcLineParsed      = Collection::make($result);
+            $this->dmarcLineDetailed    = Collection::make($detailed_result);
+            $this->validDmarcLine       = true;
         }
         return $this;
-    }
-    
-    /** DmarcAnalyzer::getDmarcLine() */
-    public function getDmarcLine(){
-        return $this->dmarcLine;
-    }
-    
-    /** DmarcAnalyzer::setDmarcLine()*/
-    public function setDmarcLine($dmarcLine){
-        $this->dmarcLine = $dmarcLine;
-        $this->parseDmarcLine();
     }
 }
