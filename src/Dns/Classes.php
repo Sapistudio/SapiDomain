@@ -55,6 +55,25 @@ class Classes
     const TYPE_DNAME        = 'DNAME';
     
     public static $dnsTypes = [
+        self::TYPE_A        => 'Address record', // Maps a domain to an IPv4 address.
+        self::TYPE_AAAA     => 'IPv6 address record', // Maps a domain to an IPv6 address.
+        self::TYPE_CNAME    => 'Canonical name record', // Alias of one name to another.
+        self::TYPE_NS       => 'Name server record', // Delegates a DNS zone to use the given authoritative name servers.
+        self::TYPE_MX       => 'Mail exchange record', // Maps a domain name to a list of message transfer agents for that domain.
+        self::TYPE_TXT      => 'Text record', // Originally for arbitrary human-readable text in a DNS record.
+        self::TYPE_SOA      => 'Start of [a zone of] authority record', // Specifies authoritative information about a DNS zone.
+        self::TYPE_PTR      => 'Pointer record', // Maps an IPv4 address to the canonical name for that host.
+        //self::TYPE_SRV    => 'Service locator', // Generalized service location record.
+        //self::TYPE_SPF    => 'Sender Policy Framework', // Used for email authentication.
+        self::TYPE_CAA      => 'Certification Authority Authorization', // Specifies which CAs are allowed to issue certificates for a domain.
+        //self::TYPE_DNSKEY => 'DNS Key record', // Contains the public signing key of a DNS zone.
+        //self::TYPE_DS => 'Delegation Signer', // Used in DNSSEC. Points to a DNSKEY record in a delegated zone.
+        //self::TYPE_NSEC => 'Next Secure record', // Part of DNSSEC—used to prove a name does not exist.
+        //self::TYPE_NSEC3 => 'Next Secure record version 3', // Part of DNSSEC, an alternative to NSEC.
+        //self::TYPE_RRSIG => 'DNSSEC signature', // Contains a signature for a DNSSEC-secured record set.
+    ];
+    
+    public static $dnsRecordTypes = [
         self::TYPE_A            => 'Maps a domain to an IPv4 address.',
         self::TYPE_NS           => 'Delegates a DNS zone to use specific authoritative name servers.',
         self::TYPE_CNAME        => 'Alias of one name to another, allowing the DNS lookup to continue with the new name.',
@@ -65,7 +84,7 @@ class Classes
         self::TYPE_AAAA         => 'Maps a domain to an IPv6 address.',
         self::TYPE_OPT          => 'Used for extending the maximum size of the DNS message and for signaling in DNSSEC.',
         self::TYPE_AXFR         => 'DNS zone transfer record, used to replicate DNS databases across a set of DNS servers.',
-        self::TYPE_ANY          => 'A request to return all records of all types known for a domain.',
+        //self::TYPE_ANY          => 'A request to return all records of all types known for a domain.',
         self::TYPE_AFSDB        => 'AFS database record, used in AFS clients to locate AFS cells.',
         self::TYPE_APL          => 'Address Prefix List, used in DNSSEC.',
         self::TYPE_CAA          => 'Certification Authority Authorization, specifies which CAs are allowed to issue certificates for a domain.',
@@ -89,7 +108,7 @@ class Classes
         self::TYPE_SIG          => 'Signature record, used in older DNSSEC specifications.',
         self::TYPE_SRV          => 'Service locator, specifies the location of servers for specified services.',
         self::TYPE_SSHFP        => 'SSH Public Key Fingerprint, used to store SSH public key fingerprints.',
-        self::TYPE_TA           => 'Trust Anchor, used for DNSSEC to indicate trusted keys.',
+        //self::TYPE_TA           => 'Trust Anchor, used for DNSSEC to indicate trusted keys.',
         self::TYPE_TKEY         => 'Secret key record, used for dynamic DNS and DNSSEC.',
         self::TYPE_TLSA         => 'Transport Layer Security Association, specifies a TLS certificate association.',
         self::TYPE_TSIG         => 'Transaction Signature, used for authenticated DNS updates.',
