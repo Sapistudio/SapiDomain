@@ -13,6 +13,7 @@ class SpfAnalyzer
     protected $spfErrors            = [];
     private $allowedIPs             = [];
     private $checkIncludeIps        = false;
+    private $parseCidrBlocks        = true;
     private $spfPolicy              = false;
     // Constants defining SPF check results and mechanisms.
     const SPF_RESULT_PASS           = 'Spf valid';
@@ -75,7 +76,7 @@ class SpfAnalyzer
             'isValid'       => $this->spfIsValid(),
             'spfErrors'     => $this->spfErrors,
             'spfPolicy'     => $this->spfPolicy,
-            'allowedIPs'    => $this->allowedIPs,
+            'allowedIPs'    => ($this->parseCidrBlocks) ? $this->parseAllowedIps() : $this->allowedIPs,
             'spfRecord'     => $this->spfRecordEntry
         ];
     }
@@ -249,5 +250,46 @@ class SpfAnalyzer
         }
 
         return false;
+    }
+    
+    public function parseAllowedIps(){
+        $return = [];
+        foreach($this->allowedIPs as $ipData){
+            $return = array_merge($return,$this->expandIPRange($ipData));
+        }
+        return $return;
+    }
+    
+    public function expandIPRange($input) {
+        // Verify if input is a valid IP address or CIDR block
+        if (filter_var($input, FILTER_VALIDATE_IP)) {
+            // It's a valid single IP
+            return [$input];
+        } elseif (strpos($input, '/') !== false) {
+            list($baseIP, $cidr) = explode('/', $input);
+            if (filter_var($baseIP, FILTER_VALIDATE_IP) && is_numeric($cidr) && $cidr >= 0 && $cidr <= 32) {
+                // Early return for a single IP in CIDR notation
+                if ($cidr == 32) {
+                    return [$baseIP];
+                }
+                // Calculate IPs range for CIDR blocks
+                $ips    = [];
+                $ipLong = ip2long($baseIP);
+                $mask   = ~((1 << (32 - $cidr)) - 1);
+                $start  = $ipLong & $mask;
+                $end    = $ipLong | ~$mask;
+                for ($ip = $start; $ip <= $end; $ip++)
+                    $ips[] = long2ip($ip);
+                return $ips;
+            } else {
+                // Invalid CIDR block
+                return [];
+                //return array("error" => "Invalid CIDR block");
+            }
+        } else {
+            // Invalid input
+            return [];
+            //return array("error" => "Invalid IP address or CIDR block");
+        }
     }
 }
