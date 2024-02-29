@@ -6,6 +6,16 @@ use SapiStudio\Domain\DnsQuerifier;
  
 class RecordDig extends DnsQuerifier implements RecordInterface
 {
+    // Define an array of public DNS servers
+    protected $dnsServers = [
+        ['name' => 'Google Public DNS', 'ips' => ['8.8.8.8', '8.8.4.4']],
+        ['name' => 'Cloudflare', 'ips' => ['1.1.1.1', '1.0.0.1']],
+        ['name' => 'OpenDNS', 'ips' => ['208.67.222.222', '208.67.220.220']],
+        ['name' => 'Quad9', 'ips' => ['9.9.9.9', '149.112.112.112']],
+        ['name' => 'CleanBrowsing', 'ips' => ['185.228.168.168', '185.228.169.168']],
+        ['name' => 'DNS.WATCH', 'ips' => ['84.200.69.80', '84.200.70.40']],
+        ['name' => 'Comodo Secure DNS', 'ips' => ['8.26.56.26', '8.20.247.20']],
+    ];
     protected $queryServer  = '';
     CONST DEFAULT_TYPE      = "ANY";
     
@@ -20,7 +30,7 @@ class RecordDig extends DnsQuerifier implements RecordInterface
     public function queryDns($type)
     {
         $type       = ($type) ? $type : self::DEFAULT_TYPE;
-        $command    = 'dig +nocmd'.$this->getSpecificQueryServer().' '.escapeshellarg($this->hostname)." {$type} +nomultiline +noall +answer ";     
+        $command    = 'dig +nocmd'.$this->getSpecificQueryServer().' '.escapeshellarg($this->hostname)." {$type} +nomultiline +noall +answer ";
         $process    = new \Symfony\Component\Process\Process($command);
         $process->run();
         return (!$process->isSuccessful()) ? false : $this->parseDigResource($process->getOutput());
@@ -41,9 +51,19 @@ class RecordDig extends DnsQuerifier implements RecordInterface
     /** RecordDig::getSpecificQueryServer()*/
     protected function getSpecificQueryServer()
     {
+        //return ' @'.escapeshellarg($this->getRandomDnsIp());
         return ($this->queryServer === '') ? '' : ' @'.escapeshellarg($this->queryServer);
     }
     
+    // Function to get a random DNS IP address
+    protected function getRandomDnsIp() {
+        // Select a random DNS server from the list
+        $randomServer = $this->dnsServers[array_rand($this->dnsServers)];
+        // Select either the primary or secondary IP randomly
+        $randomIp = $randomServer['ips'][array_rand($randomServer['ips'])];
+        return $randomIp;
+    }
+
     /** RecordDig::parseDigLine()*/
     protected function parseDigLine($digLine = null)
     {

@@ -4,48 +4,22 @@ namespace SapiStudio\Domain;
 use Illuminate\Support\Collection;
 use SapiStudio\Domain\Getter\RecordDig as Dig;
 use SapiStudio\Domain\Getter\RecordPhp as Php;
-
+use SapiStudio\Domain\Dns\Classes;
+use SapiStudio\Domain\Dns\Parser;
 /**  DnsQuerifier */
  
 class DnsQuerifier
 {
-    const GETTER_PHP            = 'php';	
-    const GETTER_DIG            = 'dig';
     //const BLACKLIST_DNS_SERVER  = '185.228.168.9';//cleanbrowsing
     const BLACKLIST_DNS_SERVER  = '185.228.168.168';//cleanbrowsing
     protected $hostname;
     protected $rawDnsRecords    = [];
     protected $dnsRecords       = null;
     
-    public static $A        = 'A';
-    public static $CNAME    = "CNAME";
-    public static $CAA      = "CAA";
-    public static $MX       = "MX";
-    public static $NS       = "NS";
-    public static $PTR      = "PTR";
-    public static $SOA      = "SOA";
-    public static $TXT      = "TXT";
-    public static $AAAA     = "AAAA";
-    public static $ANY      = "ANY";
-    protected $dnsRecordTypes = [
-        'A' => 'Address record', // Maps a domain to an IPv4 address.
-        'AAAA' => 'IPv6 address record', // Maps a domain to an IPv6 address.
-        'CNAME' => 'Canonical name record', // Alias of one name to another.
-        'NS' => 'Name server record', // Delegates a DNS zone to use the given authoritative name servers.
-        'MX' => 'Mail exchange record', // Maps a domain name to a list of message transfer agents for that domain.
-        'TXT' => 'Text record', // Originally for arbitrary human-readable text in a DNS record.
-        'SOA' => 'Start of [a zone of] authority record', // Specifies authoritative information about a DNS zone.
-        'PTR' => 'Pointer record', // Maps an IPv4 address to the canonical name for that host.
-        //'SRV' => 'Service locator', // Generalized service location record.
-        //'SPF' => 'Sender Policy Framework', // Used for email authentication.
-        'CAA' => 'Certification Authority Authorization', // Specifies which CAs are allowed to issue certificates for a domain.
-        //'DNSKEY' => 'DNS Key record', // Contains the public signing key of a DNS zone.
-        //'DS' => 'Delegation Signer', // Used in DNSSEC. Points to a DNSKEY record in a delegated zone.
-        //'NSEC' => 'Next Secure record', // Part of DNSSEC—used to prove a name does not exist.
-        //'NSEC3' => 'Next Secure record version 3', // Part of DNSSEC, an alternative to NSEC.
-        //'RRSIG' => 'DNSSEC signature', // Contains a signature for a DNSSEC-secured record set.
-    ];
-    const DMARC_DNS_ADDRES  = '_dmarc.';
+    /** DnsQuerifier::parseDnsZone() */
+    public static function parseDnsZone($zoneString){
+        return new Parser($zoneString);
+    }
     
     /** DnsQuerifier::blacklistLookup() */
     public static function blacklistLookup($adressToCheck = null,$rbls = [],$blacklist_dns_server = self::BLACKLIST_DNS_SERVER)
@@ -60,11 +34,11 @@ class DnsQuerifier
             return false;
         $ipBlacklisted = false;
         foreach($rblsUris as $key => $rblUrl){
-            $blacklisted    = (new Dig($adressToCheck.'.'.$rblUrl))->setQueryServer($blacklist_dns_server)->loadDnsRecords([self::$TXT,self::$A]);
-            if($blacklisted->getEntries(self::$A)){
+            $blacklisted    = (new Dig($adressToCheck.'.'.$rblUrl))->setQueryServer($blacklist_dns_server)->loadDnsRecords([Classes::TYPE_TXT,Classes::TYPE_A]);
+            if($blacklisted->getEntries(Classes::TYPE_A)){
                 $listed         = 'listed';
                 $ipBlacklisted  = true;
-                $txtEntry       = $blacklisted->getEntries(self::$TXT,true);
+                $txtEntry       = $blacklisted->getEntries(Classes::TYPE_TXT,true);
                 $reason         =(isset($txtEntry['entries'])) ? implode("\n",$txtEntry['entries']) : 1;
             }else{
                 $listed         = 'not';
@@ -92,11 +66,11 @@ class DnsQuerifier
     public static function make($host = null, $getterRecord = null)
     {
         switch(strtolower($getterRecord)){
-            case 'dig':
+            case Classes::GETTER_DIG:
             default:
                 return new Dig($host);
                 break;
-            case 'php':
+            case Classes::GETTER_PHP:
                 return new Php($host);
                 break;
         }
@@ -122,8 +96,8 @@ class DnsQuerifier
     public function getDmarcRecord()
     {
         $currentHost = $this->getHost();
-        $this->setHost(SELF::DMARC_DNS_ADDRES.$currentHost);
-        $dmarc = $this->loadDnsRecords(self::$TXT)->getEntries(self::$TXT,true);
+        $this->setHost(Classes::DMARC_DNS_ADDRES.$currentHost);
+        $dmarc = $this->loadDnsRecords(Classes::TYPE_TXT)->getEntries(Classes::TYPE_TXT,true);
         $this->setHost($currentHost)->loadDnsRecords();
         return ($dmarc) ? $dmarc['txt'] : null;
     }
@@ -141,19 +115,19 @@ class DnsQuerifier
     /** DnsQuerifier::getTxtRecords() */
     public function getTxtRecords()
     {
-        return $this->loadDnsRecords(self::$TXT)->getEntries(self::$TXT);
+        return $this->loadDnsRecords(Classes::TYPE_TXT)->getEntries(Classes::TYPE_TXT);
     }
     
     /** DnsQuerifier::getARecords() */
     public function getARecords()
     {
-        return $this->loadDnsRecords(self::$A)->getEntries(self::$A);
+        return $this->loadDnsRecords(Classes::TYPE_A)->getEntries(Classes::TYPE_A);
     }
     
     /** DnsQuerifier::getMxRecords()*/
     public function getMxRecords()
     {
-        return $this->loadDnsRecords(self::$MX)->getEntries(self::$MX);
+        return $this->loadDnsRecords(Classes::TYPE_MX)->getEntries(Classes::TYPE_MX);
     }
     
     /** DnsQuerifier::getAllRecords()*/
@@ -166,8 +140,8 @@ class DnsQuerifier
     public function dnsIps()
     {
         $dnsTarget = [];
-        if($this->getEntries(self::$NS)){
-            foreach(array_column($this->getEntries(self::$NS),'target') as $entryKey=>$targetValue)
+        if($this->getEntries(Classes::TYPE_NS)){
+            foreach(array_column($this->getEntries(Classes::TYPE_NS),'target') as $entryKey=>$targetValue)
                 $dnsTarget[$targetValue] = gethostbyname($targetValue);
         }
         return array_Values($dnsTarget);
@@ -200,7 +174,7 @@ class DnsQuerifier
     {
         if(!$this->hostname)
             throw new \InvalidArgumentException('A domain name is required');
-        $dnsRecordTypes         = ($type) ? (!is_array($type)) ? [$type] : $type : array_keys($this->dnsRecordTypes);
+        $dnsRecordTypes         = ($type) ? (!is_array($type)) ? [$type] : $type : array_keys(Classes::$dnsTypes);
         $this->rawDnsRecords    = [];
         foreach($dnsRecordTypes as $dnstype){
             $this->rawDnsRecords    = array_merge($this->rawDnsRecords,$this->queryDns(strtoupper($dnstype)));
@@ -234,25 +208,25 @@ class DnsQuerifier
     /** DnsQuerifier::summary() */
     public function summary(){
         $returnData                             = [];
-        if($this->getEntries(self::$A))
-            $returnData['entries'][self::$A]    = array_column($this->getEntries(self::$A),'ip');
-        if($this->getEntries(self::$NS))
-            $returnData['entries'][self::$NS]   = array_column($this->getEntries(self::$NS),'target');
-        if($this->getEntries(self::$TXT))
-            $returnData['entries'][self::$TXT]  = array_column($this->getEntries(self::$TXT),'txt');
-        if($this->getEntries(self::$AAAA)){
-            foreach($this->getEntries(self::$AAAA) as $entryKey=>$entryData){
+        if($this->getEntries(Classes::TYPE_A))
+            $returnData['entries'][Classes::TYPE_A]    = array_column($this->getEntries(Classes::TYPE_A),'ip');
+        if($this->getEntries(Classes::TYPE_NS))
+            $returnData['entries'][Classes::TYPE_NS]   = array_column($this->getEntries(Classes::TYPE_NS),'target');
+        if($this->getEntries(Classes::TYPE_TXT))
+            $returnData['entries'][Classes::TYPE_TXT]  = array_column($this->getEntries(Classes::TYPE_TXT),'txt');
+        if($this->getEntries(Classes::TYPE_AAAA)){
+            foreach($this->getEntries(Classes::TYPE_AAAA) as $entryKey=>$entryData){
                 $ip = (isset($entryData['ip6'])) ? $entryData['ip6'] : $entryData['ipv6'];
-                $returnData['entries'][self::$AAAA][] = $entryData['host'].' - '.$ip;
+                $returnData['entries'][Classes::TYPE_AAAA][] = $entryData['host'].' - '.$ip;
             }
         }
-        if($this->getEntries(self::$SOA)){
-            foreach($this->getEntries(self::$SOA) as $entryKey=>$entryData)
-                $returnData['entries'][self::$SOA][]    = 'Ttl:'.$entryData['ttl'].' - '.$entryData['rname'];
+        if($this->getEntries(Classes::TYPE_SOA)){
+            foreach($this->getEntries(Classes::TYPE_SOA) as $entryKey=>$entryData)
+                $returnData['entries'][Classes::TYPE_SOA][]    = 'Ttl:'.$entryData['ttl'].' - '.$entryData['rname'];
         }
-        if($this->getEntries(self::$MX)){
-            foreach($this->getEntries(self::$MX) as $entryKey=>$entryData)
-                $returnData['entries'][self::$MX][]     = $entryData['target'].' - '.$entryData['ttl'];
+        if($this->getEntries(Classes::TYPE_MX)){
+            foreach($this->getEntries(Classes::TYPE_MX) as $entryKey=>$entryData)
+                $returnData['entries'][Classes::TYPE_MX][]     = $entryData['target'].' - '.$entryData['ttl'];
         }
         $spfresults                                 = $this->hasSpf();
         $dmarcResults                               = $this->hasDmarc();
@@ -278,7 +252,7 @@ class DnsQuerifier
     
     /** DnsQuerifier::loadWhois() */
     public function loadWhois(){
-        return Whois::load($this->hostname);
+        return Whois::load(self::getMainDomain($this->hostname));
     }
     
     /** DnsQuerifier::reverseIp() */
@@ -297,5 +271,10 @@ class DnsQuerifier
     protected static function sanitizeDomainName($domain)
     {
         return strtolower(strtok(str_replace(['http://', 'https://'], '', $domain), '/'));
+    }
+    
+    /** DnsQuerifier::getMainDomain() */
+    public static function getMainDomain($domain = '') {
+        return implode('.', array_slice(explode('.', $domain), -2, 2));
     }
 }
