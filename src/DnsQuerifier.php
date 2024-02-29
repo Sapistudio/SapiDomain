@@ -13,8 +13,9 @@ class DnsQuerifier
     //const BLACKLIST_DNS_SERVER  = '185.228.168.9';//cleanbrowsing
     const BLACKLIST_DNS_SERVER  = '185.228.168.168';//cleanbrowsing
     protected $hostname;
-    protected $rawDnsRecords    = [];
-    protected $dnsRecords       = null;
+    protected $rawDnsRecords        = [];
+    protected $dnsRecords           = null;
+    protected $loadNsFromMainDom    = true;
     
     /** DnsQuerifier::parseDnsZone() */
     public static function parseDnsZone($zoneString){
@@ -80,6 +81,12 @@ class DnsQuerifier
     public function __construct($hostName)
     {
         $this->setHost($hostName);
+    }
+    
+    /** DnsQuerifier::loadNsFromMainDom()  */
+    public function loadNsFromMainDom($boolValue = true){
+        $this->loadNsFromMainDom = $boolValue;
+        return $this;
     }
     
     /** DnsQuerifier::hasDmarc()  */
@@ -210,7 +217,13 @@ class DnsQuerifier
         $returnData                             = [];
         if($this->getEntries(Classes::TYPE_A))
             $returnData['entries'][Classes::TYPE_A]    = array_column($this->getEntries(Classes::TYPE_A),'ip');
-        if($this->getEntries(Classes::TYPE_NS))
+        if(!$this->getEntries(Classes::TYPE_NS)){
+            if(self::getMainDomain($this->hostname) != $this->hostname && $this->loadNsFromMainDom){
+                $entries = self::dnsLoad(self::getMainDomain($this->hostname))->getEntries(Classes::TYPE_NS);
+                if($entries)
+                    $returnData['entries'][Classes::TYPE_NS]   = array_column($entries,'target');
+            }
+        }else
             $returnData['entries'][Classes::TYPE_NS]   = array_column($this->getEntries(Classes::TYPE_NS),'target');
         if($this->getEntries(Classes::TYPE_TXT))
             $returnData['entries'][Classes::TYPE_TXT]  = array_column($this->getEntries(Classes::TYPE_TXT),'txt');
